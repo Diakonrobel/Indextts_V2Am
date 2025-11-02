@@ -1,0 +1,288 @@
+# Amharic-specific configuration for IndexTTS2 fine-tuning
+# Optimized for modern Amharic script (ፊደል) with LoRA fine-tuning
+dataset:
+    bpe_model: amharic_bpe.model
+    sample_rate: 24000
+    squeeze: false
+    mel:
+        sample_rate: 24000
+        n_fft: 1024
+        hop_length: 256
+        win_length: 1024
+        n_mels: 100
+        mel_fmin: 0
+        normalize: false
+
+gpt:
+    model_dim: 1280
+    max_mel_tokens: 1815
+    max_text_tokens: 600
+    heads: 20
+    use_mel_codes_as_input: true
+    mel_length_compression: 1024
+    layers: 24
+    number_text_tokens: 8000  # Amharic vocabulary size (optimized for Amharic)
+    number_mel_codes: 8194
+    start_mel_token: 8192
+    stop_mel_token: 8193
+    start_text_token: 0
+    stop_text_token: 1
+    train_solo_embeddings: false
+    condition_type: "conformer_perceiver"
+    condition_module:
+        output_size: 512
+        linear_units: 2048
+        attention_heads: 8
+        num_blocks: 6
+        input_layer: "conv2d2"
+        perceiver_mult: 2
+    emo_condition_module:
+        output_size: 512
+        linear_units: 1024
+        attention_heads: 4
+        num_blocks: 4
+        input_layer: "conv2d2"
+        perceiver_mult: 2
+
+# LoRA configuration for efficient Amharic fine-tuning
+lora:
+    enabled: true
+    rank: 16
+    alpha: 16.0
+    dropout: 0.1  # Slightly higher dropout for Amharic
+    target_modules:
+        - "gpt.h.*.attn.c_attn"
+        - "gpt.h.*.attn.c_proj"
+        - "gpt.h.*.mlp.c_fc"
+        - "gpt.h.*.mlp.c_proj"
+    bias: "none"
+    task_type: "FEATURE_EXTRACTION"
+
+# Training configuration optimized for Amharic
+training:
+    num_epochs: 15  # More epochs for Amharic fine-tuning
+    batch_size: 4
+    learning_rate: 5e-5  # Lower learning rate for Amharic
+    warmup_steps: 1500  # More warmup for Amharic
+    gradient_clip_val: 1.0
+    save_every: 500  # Save more frequently
+    log_every: 50
+    weight_decay: 0.01
+    
+    # Data augmentation for Amharic
+    augmentation:
+        speed_perturbation: true
+        speed_range: [0.85, 1.15]  # Wider range for Amharic speech patterns
+        pitch_perturbation: true
+        pitch_range: [-0.2, 0.2]  # Wider pitch range
+        noise_injection: true
+        noise_level: 0.005
+        time_stretching: true
+        
+        # Amharic-specific augmentation
+        vowel_length_variation: true
+        consonant_clarity_boost: true
+    
+    # Regularization
+    regularization:
+        dropout: 0.15  # Higher dropout for Amharic
+        label_smoothing: 0.05  # Lower label smoothing for better Amharic learning
+        early_stopping_patience: 7
+        min_delta: 0.0001
+
+# Amharic-specific text processing
+amharic_text:
+    preserve_script: true  # Keep modern Amharic script (ፊደል)
+    normalize_unicode: true
+    expand_contractions: true
+    expand_abbreviations: true
+    normalize_numbers: true
+    normalize_punctuation: true
+    
+    # Amharic-specific text normalization rules
+    number_normalization: true
+    abbreviations_expansion: true
+    contraction_expansion: true
+    
+    # Script-specific handling
+    handle_syllabic_structure: true
+    preserve_vowel_markers: true
+    maintain_consonant_clusters: true
+
+# Amharic phonetics configuration
+amharic_phonetics:
+    # Amharic vowel system (7 main vowels)
+    vowels:
+        - "አ"  # ä
+        - "ኡ"  # u
+        - "ኢ"  # i
+        - "ኦ"  # o
+        - "ኤ"  # e
+        - "ኣ"  # ä (alternative)
+        - "እ"  # ə
+    
+    # Amharic consonants (simplified for TTS)
+    consonants:
+        - "ሀ"  # h
+        - "ለ"  # l
+        - "መ"  # m
+        - "ሠ"  # s
+        - "ተ"  # t
+        - "ቨ"  # v
+        - "ነ"  # n
+        - "ፐ"  # p
+    
+    # Amharic phonetic features
+    syllabic_structure: "CV"  # Consonant-Vowel pattern
+    stress_pattern: "penultimate"  # Primary stress on penultimate syllable
+    tone_system: "non-tonal"  # Amharic is not tonal
+    
+    # Special Amharic sounds
+    ejective_consonants: ["ጵ", "ጥ", "ፍ", "ት", "ቅ"]  # ḵ, ṭ, ḵʷ, ṭʷ, ḳ
+    geminate_consonants: true  # Support for geminate consonants
+
+# Evaluation configuration for Amharic
+evaluation:
+    metrics:
+        - "cer"  # Character Error Rate
+        - "wer"  # Word Error Rate  
+        - "mos"  # Mean Opinion Score
+        - "speaker_similarity"
+        - "emotion_accuracy"
+        - "duration_accuracy"
+        - "amharic_phoneme_accuracy"  # Amharic-specific metric
+        - "syllable_rhythm_accuracy"  # Amharic rhythm accuracy
+        
+    test_sets:
+        - "in_domain"
+        - "out_of_domain" 
+        - "emotional"
+        - "long_utterances"
+        - "formal_amharic"  # Formal Amharic texts
+        - "conversational_amharic"  # Conversational Amharic
+    
+    # Amharic-specific evaluation criteria
+    amharic_evaluation:
+        script_preservation_accuracy: true
+        vowel_length_accuracy: true
+        consonant_cluster_accuracy: true
+        stress_pattern_accuracy: true
+        rhythm_accuracy: true
+        intonation_accuracy: true
+
+# Model paths for Amharic
+model_paths:
+    pretrained_model: "checkpoints/gpt.pth"
+    amharic_vocab: "amharic_bpe.model"
+    speaker_encoder: "checkpoints/spk_matrix.pt"
+    emotion_encoder: "checkpoints/emo_matrix.pt"
+    vocoder: "nvidia/bigvgan_v2_22khz_80band_256x"
+    
+    # Amharic-specific model paths
+    amharic_tokenizer: "amharic_bpe.model"
+    amharic_phoneme_model: null  # If using phoneme-based approach
+
+# Output configuration for Amharic training
+output:
+    checkpoint_dir: "checkpoints/amharic"
+    log_dir: "logs/amharic"
+    sample_dir: "samples/amharic"
+    tensorboard_dir: "runs/amharic"
+    
+    # Checkpoint saving
+    save_best: true
+    save_last: true
+    save_every_n_epochs: 1
+    
+    # Sample generation for Amharic
+    generate_samples_every: 500
+    num_samples: 8  # More samples for Amharic evaluation
+    sample_texts:
+        - "ሰላም ዓለም! እንደምን አደርኩ?"
+        - "ዛሬ የተሻለ ቀን ነው።"
+        - "እባኮትልትን ማሳመን አልችልም።"
+        - "ይህ የአማርኛ ድምጽ ማመንጫ ነው።"
+        - "እንደምን አደርክ እንኳን ደህና መጣህ!"
+        - "በትምህርት ቤት ላይ ነበርኩ።"
+        - "የአማርኛ ቋንቋ በጣም ጥሩ ቋንቋ ነው።"
+        - "አመሰግንልሃለሁ ለረዳትነትዎ።"
+
+# Hardware configuration for Amharic training
+hardware:
+    device: "cuda"
+    num_workers: 6  # More workers for Amharic data loading
+    pin_memory: true
+    mixed_precision: true
+    gradient_checkpointing: true
+    
+    # Memory optimization
+    memory_efficient_attention: true
+    activation_checkpointing: true
+    gradient_accumulation_steps: 2  # Gradient accumulation for larger effective batch size
+
+# Logging configuration
+logging:
+    level: "INFO"
+    log_to_file: true
+    log_to_console: true
+    log_to_wandb: false  # Set to true if using wandb
+    
+    # Wandb configuration for Amharic
+    wandb:
+        project: "indextts2-amharic"
+        entity: null
+        tags: ["amharic", "tts", "finetuning", "ፊደል"]
+        notes: "Amharic fine-tuning for IndexTTS2 using modern Amharic script"
+
+# Data configuration for Amharic
+data:
+    train_split: 0.8
+    val_split: 0.1
+    test_split: 0.1
+    
+    # Data filtering for Amharic
+    min_duration: 1.5  # Slightly higher minimum for Amharic
+    max_duration: 25.0  # Slightly lower maximum for Amharic speech patterns
+    min_text_length: 8  # Higher minimum for Amharic sentences
+    max_text_length: 400  # Lower maximum for Amharic texts
+    
+    # Data augmentation for Amharic
+    augmentation_prob: 0.6  # Higher augmentation probability
+    speed_range: [0.8, 1.2]  # Wider speed range for Amharic
+    pitch_range: [-0.3, 0.3]  # Wider pitch range
+    noise_level: 0.008
+    
+    # Amharic-specific data characteristics
+    script_distribution:
+        modern_amharic: 0.95  # Modern Amharic script
+        ge_ez_script: 0.05    # Minimal Ge'ez for completeness
+
+# Advanced Amharic linguistic features
+amharic_linguistics:
+    # Morphological features
+    support_verb_conjugation: true
+    support_noun_declension: true
+    support_adjective_agreement: true
+    
+    # Phonological features
+    vowel_harmony: false  # Amharic doesn't have vowel harmony
+    consonant_mutations: true
+    syllable_structure: "CV"  # Primary syllable type
+    
+    # Orthographic features
+    use_fidel_script: true  # Modern Amharic script
+    support_loanwords: true
+    handle_punctuation_amharic: true
+
+# Error handling and robustness
+robustness:
+    handle_oov_text: true
+    fallback_to_phonemes: false
+    ignore_unknown_characters: false
+    max_retry_attempts: 3
+    
+    # Amharic-specific error handling
+    amharic_error_recovery:
+        fix_unicode_issues: true
+        handle_mixed_scripts: true
+        normalize_inconsistent_spelling: true
