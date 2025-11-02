@@ -1,0 +1,314 @@
+﻿# ========================================================================
+# IndexTTS2 Amharic Fine-Tuning - Universal Requirements
+# Compatible with: Lightning AI, Windows, Linux, macOS, Google Colab
+# Python Version: >=3.10,<3.13
+# ========================================================================
+#
+# Installation:
+#   pip install -r requirements.txt
+#
+# For specific environments:
+#   Lightning AI:  pip install -r requirements.txt --no-cache-dir
+#   Google Colab:  !pip install -r requirements.txt -q
+#   Windows:       pip install -r requirements.txt
+#   Linux/Mac:     pip3 install -r requirements.txt
+#
+# ========================================================================
+
+# ========================================================================
+# CORE DEEP LEARNING FRAMEWORKS
+# ========================================================================
+
+# PyTorch with CUDA support (auto-detects CPU/GPU)
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch>=2.0.0,<2.5.0
+torchaudio>=2.0.0,<2.5.0
+torchvision>=0.15.0,<0.20.0
+
+# Accelerate for mixed precision and distributed training
+accelerate>=0.24.0,<1.10.0
+
+# Transformers for NLP models
+transformers>=4.35.0,<4.60.0
+tokenizers>=0.15.0,<0.22.0
+
+# Safetensors for efficient model loading
+safetensors>=0.4.0,<0.6.0
+
+# ========================================================================
+# AUDIO PROCESSING (Core)
+# ========================================================================
+
+# Audio I/O and processing
+librosa>=0.10.0,<0.12.0
+soundfile>=0.12.0,<0.13.0
+audioread>=3.0.0,<4.0.0
+pydub>=0.25.1,<0.26.0
+resampy>=0.4.2,<0.5.0
+scipy>=1.10.0,<1.15.0
+
+# Audio codecs support
+ffmpeg-python>=0.2.0,<0.3.0
+
+# Feature extraction
+descript-audiotools>=0.7.2,<0.8.0
+
+# ========================================================================
+# TEXT PROCESSING (Multilingual + Amharic)
+# ========================================================================
+
+# Tokenization
+sentencepiece>=0.1.99,<0.3.0
+
+# Text normalization
+unidecode>=1.3.6,<1.4.0
+regex>=2023.10.0,<2025.0.0
+
+# Chinese text processing
+jieba>=0.42.1,<0.43.0
+cn2an>=0.5.22,<0.6.0
+
+# English phoneme conversion
+g2p-en>=2.1.0,<2.2.0
+
+# Platform-specific text processing
+wetext>=0.0.9; sys_platform == 'win32' or sys_platform == 'darwin'
+WeTextProcessing>=1.0.0; sys_platform == 'linux'
+
+# Text utilities
+textstat>=0.7.3,<0.8.0
+
+# ========================================================================
+# MACHINE LEARNING UTILITIES
+# ========================================================================
+
+# Numerical computing
+numpy>=1.24.0,<1.27.0
+numba>=0.58.0,<0.61.0
+pandas>=2.0.0,<2.4.0
+
+# Neural network utilities
+einops>=0.7.0,<0.9.0
+munch>=4.0.0,<5.0.0
+
+# ========================================================================
+# MODEL SERVING & MONITORING
+# ========================================================================
+
+# Experiment tracking
+tensorboard>=2.9.0,<2.18.0
+wandb>=0.15.0,<0.20.0
+
+# Model serving
+omegaconf>=2.3.0,<2.4.0
+json5>=0.9.14,<0.11.0
+
+# Checkpointing
+PyYAML>=6.0,<7.0
+
+# ========================================================================
+# WEB INTERFACE (GRADIO)
+# ========================================================================
+
+# Gradio WebUI
+gradio>=4.21.0,<5.50.0
+
+# Web framework (optional but useful)
+fastapi>=0.104.0,<0.120.0; extra == 'webui'
+uvicorn[standard]>=0.24.0,<0.35.0; extra == 'webui'
+
+# ========================================================================
+# VISUALIZATION & MONITORING
+# ========================================================================
+
+# Plotting
+matplotlib>=3.7.0,<3.10.0
+seaborn>=0.12.0,<0.14.0
+
+# Computer vision (for spectrograms)
+opencv-python>=4.8.0,<4.11.0
+Pillow>=10.0.0,<11.0.0
+
+# ========================================================================
+# PROGRESS BARS & LOGGING
+# ========================================================================
+
+# Progress tracking
+tqdm>=4.66.0,<5.0.0
+
+# Logging
+loguru>=0.7.0,<0.8.0
+
+# System monitoring
+psutil>=5.9.0,<6.1.0
+GPUtil>=1.4.0,<2.0.0; sys_platform != 'darwin'
+
+# ========================================================================
+# SPECIAL MODELS & LIBRARIES
+# ========================================================================
+
+# HuggingFace Hub
+huggingface-hub>=0.17.0,<0.30.0
+
+# ModelScope (Chinese model hub)
+modelscope>=1.9.0,<1.30.0
+
+# Keras (legacy compatibility)
+keras==2.9.0
+tensorflow>=2.9.0,<2.18.0; extra == 'keras'
+
+# ========================================================================
+# TRAINING UTILITIES
+# ========================================================================
+
+# Learning rate schedulers
+timm>=0.9.0,<1.0.0
+
+# PEFT for LoRA (optional but included)
+peft>=0.5.0,<0.15.0
+
+# ========================================================================
+# DATA AUGMENTATION
+# ========================================================================
+
+# Audio augmentation
+torch-audiomentations>=0.11.0,<0.12.0; extra == 'augmentation'
+audiomentations>=0.31.0,<0.40.0; extra == 'augmentation'
+
+# ========================================================================
+# OPTIONAL: DeepSpeed (Full Training)
+# ========================================================================
+
+# DeepSpeed for distributed training
+deepspeed>=0.10.0,<0.18.0; extra == 'deepspeed'
+
+# ========================================================================
+# OPTIONAL: Advanced Features
+# ========================================================================
+
+# Mixed precision training
+apex>=0.1; extra == 'apex'
+
+# Flash attention (faster transformers)
+flash-attn>=2.0.0,<3.0.0; extra == 'flash' and sys_platform == 'linux'
+
+# Quantization
+bitsandbytes>=0.41.0,<0.45.0; extra == 'quantize'
+
+# ========================================================================
+# DEVELOPMENT & TESTING
+# ========================================================================
+
+# Testing framework
+pytest>=7.4.0,<9.0.0; extra == 'dev'
+pytest-asyncio>=0.21.0,<0.25.0; extra == 'dev'
+pytest-cov>=4.1.0,<7.0.0; extra == 'dev'
+
+# Code quality
+black>=23.0.0,<25.0.0; extra == 'dev'
+flake8>=6.0.0,<8.0.0; extra == 'dev'
+isort>=5.12.0,<6.0.0; extra == 'dev'
+
+# Type checking
+mypy>=1.5.0,<2.0.0; extra == 'dev'
+
+# ========================================================================
+# HTTP & API CLIENTS
+# ========================================================================
+
+# HTTP requests
+requests>=2.31.0,<3.0.0
+httpx>=0.25.0,<0.30.0
+aiohttp>=3.9.0,<4.0.0
+
+# ========================================================================
+# FILE HANDLING & UTILITIES
+# ========================================================================
+
+# File operations
+pathlib>=1.0.1
+watchdog>=3.0.0,<6.0.0
+
+# Configuration
+python-dotenv>=1.0.0,<2.0.0
+click>=8.1.0,<9.0.0
+
+# Data validation
+jsonschema>=4.19.0,<5.0.0
+
+# ========================================================================
+# PLATFORM-SPECIFIC COMPATIBILITY
+# ========================================================================
+
+# Windows-specific
+pywin32>=305; sys_platform == 'win32'
+colorama>=0.4.6; sys_platform == 'win32'
+
+# Linux-specific (for system notifications)
+notify2>=0.3.1; sys_platform == 'linux'
+
+# ========================================================================
+# BUILD DEPENDENCIES (for compilation)
+# ========================================================================
+
+# Cython for performance-critical code
+Cython>=3.0.0,<3.1.0
+
+# Wheel for package distribution
+wheel>=0.41.0,<0.45.0
+setuptools>=68.0.0,<75.0.0
+
+# ========================================================================
+# COMPATIBILITY LAYERS
+# ========================================================================
+
+# Ensure compatibility across Python versions
+typing-extensions>=4.8.0,<5.0.0
+importlib-metadata>=6.8.0,<9.0.0; python_version < '3.12'
+
+# ========================================================================
+# NOTES & INSTALLATION VARIANTS
+# ========================================================================
+#
+# MINIMAL INSTALLATION (Core only):
+#   pip install torch torchaudio librosa sentencepiece transformers \\
+#               accelerate tensorboard gradio omegaconf pyyaml
+#
+# FULL INSTALLATION (All features):
+#   pip install -r requirements.txt
+#
+# LIGHTNING AI / GOOGLE COLAB:
+#   !pip install -r requirements.txt -q --no-cache-dir
+#
+# DEVELOPMENT:
+#   pip install -r requirements.txt[dev]
+#
+# WITH DEEPSPEED (Full Training):
+#   pip install -r requirements.txt[deepspeed]
+#
+# WITH WEB UI:
+#   pip install -r requirements.txt[webui]
+#
+# ========================================================================
+# TROUBLESHOOTING
+# ========================================================================
+#
+# 1. CUDA not found:
+#    pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
+#
+# 2. ffmpeg missing:
+#    - Ubuntu/Debian: sudo apt-get install ffmpeg
+#    - Windows: choco install ffmpeg (or download from ffmpeg.org)
+#    - macOS: brew install ffmpeg
+#
+# 3. Build failures (Windows):
+#    - Install Visual Studio Build Tools
+#    - Or use pre-built wheels: pip install --prefer-binary
+#
+# 4. Memory issues:
+#    pip install -r requirements.txt --no-cache-dir
+#
+# 5. Version conflicts:
+#    pip install -r requirements.txt --upgrade --force-reinstall
+#
+# ========================================================================
