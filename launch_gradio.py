@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Professional Amharic IndexTTS2 Web Interface Launcher
 Complete training and inference platform with modern UI
@@ -13,15 +13,23 @@ from pathlib import Path
 
 def check_dependencies():
     """Check if all required dependencies are installed"""
-    required_packages = [
-        'gradio', 'torch', 'torchaudio', 'numpy', 'pyyaml', 
-        'psutil', 'tqdm', 'sentencepiece', 'transformers'
-    ]
+    # Map package names to their import names
+    required_packages = {
+        'gradio': 'gradio',
+        'torch': 'torch',
+        'torchaudio': 'torchaudio',
+        'numpy': 'numpy',
+        'pyyaml': 'yaml',  # pyyaml installs as 'yaml'
+        'psutil': 'psutil',
+        'tqdm': 'tqdm',
+        'sentencepiece': 'sentencepiece',
+        'transformers': 'transformers'
+    }
     
     missing_packages = []
-    for package in required_packages:
+    for package, import_name in required_packages.items():
         try:
-            __import__(package)
+            __import__(import_name)
         except ImportError:
             missing_packages.append(package)
     
@@ -88,19 +96,6 @@ def launch_gradio_app(port=7860, share=False, in_browser=True):
     print(f"🚀 Launching Amharic IndexTTS2 Web Interface...")
     print(f"📍 URL: http://localhost:{port}")
     print(f"📱 Mode: {'Public' if share else 'Local'}")
-    
-    # Additional launch options for production
-    launch_args = {
-        'server_name': "0.0.0.0",
-        'server_port': port,
-        'share': share,
-        'inbrowser': in_browser,
-        'show_error': True,
-        'quiet': False,
-        'show_tips': True,
-        'height': 800,
-        'title': "Amharic IndexTTS2 - Professional TTS Platform"
-    }
     
     try:
         # Import and run the app
