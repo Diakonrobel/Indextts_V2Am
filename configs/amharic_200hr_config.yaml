@@ -1,0 +1,280 @@
+# Amharic-specific configuration for IndexTTS2 fine-tuning
+# Optimized for 200-hour dataset and T4 GPU (16GB VRAM)
+
+dataset:
+    bpe_model: amharic_bpe.model
+    sample_rate: 24000
+    squeeze: false
+    mel:
+        sample_rate: 24000
+        n_fft: 1024
+        hop_length: 256
+        win_length: 1024
+        n_mels: 100
+        mel_fmin: 0
+        normalize: false
+
+gpt:
+    model_dim: 1280
+    max_mel_tokens: 1815
+    max_text_tokens: 600
+    heads: 20
+    use_mel_codes_as_input: true
+    mel_length_compression: 1024
+    layers: 24
+    number_text_tokens: 12000  # Increased for 200hr dataset
+    number_mel_codes: 8194
+    start_mel_token: 8192
+    stop_mel_token: 8193
+    start_text_token: 0
+    stop_text_token: 1
+    train_solo_embeddings: false
+    condition_type: "conformer_perceiver"
+    condition_module:
+        output_size: 512
+        linear_units: 2048
+        attention_heads: 8
+        num_blocks: 6
+        input_layer: "conv2d2"
+        perceiver_mult: 2
+    emo_condition_module:
+        output_size: 512
+        linear_units: 1024
+        attention_heads: 4
+        num_blocks: 4
+        input_layer: "conv2d2"
+        perceiver_mult: 2
+
+# LoRA configuration - Optimized for T4 GPU
+lora:
+    enabled: true
+    rank: 8  # Reduced for memory efficiency on T4
+    alpha: 16.0
+    dropout: 0.1  # Increased dropout for anti-overfitting
+    target_modules:
+        - "gpt.h.*.attn.c_attn"
+        - "gpt.h.*.attn.c_proj"
+        - "gpt.h.*.mlp.c_fc"
+        - "gpt.h.*.mlp.c_proj"
+
+# Training configuration - 200hr dataset specific
+training:
+    # Core training parameters
+    num_epochs: 6  # Reduced from 10 to prevent overfitting
+    batch_size: 2  # Optimized for T4 16GB VRAM
+    learning_rate: 5e-5  # Lower LR for stability
+    warmup_steps: 2000  # Increased for larger dataset
+    gradient_clip_val: 0.5  # Tighter clipping
+    save_every: 500  # More frequent saves
+    log_every: 50
+    weight_decay: 0.01
+    
+    # Anti-overfitting measures (CRITICAL for 200hr datasets)
+    validation_split: 0.15  # More validation data
+    early_stopping_patience: 3  # Early stop if no improvement
+    min_epochs_before_early_stop: 3  # Don't stop too early
+    
+    # Gradient accumulation for larger effective batch size
+    gradient_accumulation_steps: 8  # Effective batch size: 2 * 8 = 16
+    max_grad_norm: 0.5
+    
+    # Data augmentation for diversity
+    augmentation:
+        speed_perturbation: true
+        speed_range: [0.95, 1.05]  # Subtle speed changes
+        pitch_perturbation: true
+        pitch_range: [-0.5, 0.5]  # Semitones
+        noise_injection: true
+        noise_level: 0.005  # Very low noise
+        time_stretching: true
+        stretch_range: [0.95, 1.05]
+        
+    # Advanced regularization
+    regularization:
+        dropout: 0.2  # Strong dropout
+        label_smoothing: 0.15  # Increased smoothing
+        layer_dropout: 0.1  # Layer dropout
+        attention_dropout: 0.15  # Attention dropout
+        hidden_dropout: 0.1  # Hidden state dropout
+        
+    # Memory optimization for T4 GPU
+    memory_optimization:
+        mixed_precision: true  # Enable FP16
+        gradient_checkpointing: true  # Save memory at cost of compute
+        activation_checkpointing: true  # Checkpoint activations
+        low_memory_mode: true  # Additional memory saving
+
+# Amharic-specific text processing
+amharic_text:
+    normalize_umlauts: false  # Keep Amharic script intact
+    expand_contractions: true
+    expand_abbreviations: true
+    normalize_numbers: true
+    normalize_punctuation: true
+    
+    # Character variant normalization (important for Amharic)
+    character_variants:
+        # Handle common character confusions in Amharic
+        "ሥ": "ስ"  # normalize ሥ to ስ
+        "እ": "ኧ"  # normalize እ to ኧ (modern orthography)
+        "ዕ": "እ"  # normalize ዕ to እ
+        
+    # Number expansion (comprehensive for Amharic)
+    contractions:
+        "ከሆነ": "ከ ሆነ"
+        "እንደሆነ": "እንደ ሆነ"
+        "እንዲሁም": "እንዲሁ እንዲሁ"
+        
+    abbreviations:
+        "ም.ም.": "ምሳሌ ምሳሌ"
+        "ዶ/ር": "ዶክተር"
+        "ፕ/ር": "ፕሮፌሰር"
+
+# Evaluation configuration
+evaluation:
+    metrics:
+        - "cer"  # Character Error Rate
+        - "wer"  # Word Error Rate
+        - "mos"  # Mean Opinion Score
+        - "speaker_similarity"
+        - "emotion_accuracy"
+        - "duration_accuracy"
+        
+    test_sets:
+        - "in_domain"      # Test on training domain
+        - "out_of_domain"  # Test on unseen data
+        - "emotional"      # Test emotion transfer
+        - "long_utterances" # Test longer sequences
+        - "cross_speaker"   # Test voice cloning
+        
+    # Amharic-specific evaluation
+    amharic_evaluation:
+        phoneme_accuracy: true
+        stress_accuracy: true
+        rhythm_accuracy: true
+        intonation_accuracy: true
+        script_fidelity: true  # Ensure proper Amharic script
+
+# Model paths
+model_paths:
+    pretrained_model: "checkpoints/gpt.pth"
+    amharic_vocab: "amharic_bpe.model"
+    speaker_encoder: "checkpoints/spk_matrix.pt"
+    emotion_encoder: "checkpoints/emo_matrix.pt"
+    vocoder: "nvidia/bigvgan_v2_22khz_80band_256x"
+
+# Output configuration
+output:
+    checkpoint_dir: "checkpoints/amharic_200hr"
+    log_dir: "logs/amharic_200hr"
+    sample_dir: "samples/amharic_200hr"
+    tensorboard_dir: "runs/amharic_200hr"
+    
+    # Checkpoint saving strategy
+    save_best: true
+    save_last: true
+    save_every_n_epochs: 1
+    save_top_k: 3  # Save top 3 checkpoints
+    
+    # Sample generation (for monitoring training)
+    generate_samples_every: 250  # More frequent sampling
+    num_samples: 3
+    sample_texts:
+        - "ሰላም ዓለም! ይህ የአማርኛ ሙከራ ነው።"
+        - "መልካም ቀን! እንደምን አደርኩልዎት?"
+        - "ይህ ዘመቻ ለአማርኛ TTS ስልጠና ነው።"
+
+# Hardware configuration (T4 GPU optimized)
+hardware:
+    device: "cuda"
+    num_workers: 2  # Reduced for T4 GPU
+    pin_memory: true
+    mixed_precision: true  # Enable AMP for T4
+    gradient_checkpointing: true
+    
+    # T4 GPU specific optimizations
+    memory_efficient_attention: true  # Save VRAM
+    activation_checkpointing: true
+    gradient_accumulation_steps: 8  # Effective batch size = 16
+    
+    # CPU utilization
+    dataloader_num_workers: 2
+    dataloader_pin_memory: true
+
+# Logging configuration
+logging:
+    level: "INFO"
+    log_to_file: true
+    log_to_console: true
+    log_to_wandb: true  # Recommended for cloud training
+    
+    # Wandb configuration for 200hr training
+    wandb:
+        project: "indextts2-amharic-200hr"
+        entity: null
+        tags: ["amharic", "tts", "200hr", "anti-overfitting", "t4-gpu"]
+        notes: "200-hour Amharic fine-tuning with anti-overfitting measures"
+        log_freq: 50
+        save_freq: 500
+
+# Data configuration (200hr dataset specific)
+data:
+    # Larger splits for 200hr dataset
+    train_split: 0.85  # 170hr for training
+    val_split: 0.15    # 30hr for validation
+    
+    # Data filtering (more lenient for large dataset)
+    min_duration: 0.5  # Include shorter clips
+    max_duration: 15.0  # Allow longer utterances
+    min_text_length: 3  # Minimum text length
+    max_text_length: 800  # Allow longer text
+    
+    # Data augmentation probability (higher for diversity)
+    augmentation_prob: 0.7  # 70% augmentation rate
+    speed_range: [0.9, 1.1]  # Wider speed variation
+    pitch_range: [-1.0, 1.0]  # Wider pitch range
+    noise_level: 0.01
+    
+    # Dataset quality checks
+    quality_filtering:
+        min_snr: 10  # Signal-to-noise ratio
+        max_clipped_ratio: 0.01  # Allow some clipping
+        enable_quality_filtering: true
+
+# Anti-overfitting monitoring
+monitoring:
+    # Metrics to track for overfitting detection
+    overfitting_indicators:
+        - "train_loss_vs_val_loss"
+        - "validation_cer_trend"
+        - "speaker_similarity_drift"
+        - "emotion_accuracy_degradation"
+        
+    # Early intervention triggers
+    intervention_triggers:
+        val_loss_increase_streak: 2  # Stop if val loss increases 2x
+        train_val_loss_gap_threshold: 0.1  # Alert if gap > 0.1
+        validation_cer_increase: 0.05  # Alert if CER increases by 5%
+        
+    # Checkpoint selection criteria
+    checkpoint_selection:
+        primary_metric: "validation_cer"  # Use CER for selection
+        secondary_metric: "validation_loss"
+        selection_strategy: "best_primary_then_secondary"
+
+# Amharic-specific phoneme configuration
+phonemes:
+    # Amharic phoneme set (comprehensive)
+    vowels: ["a", "a:", "e", "e:", "i", "i:", "o", "o:", "u", "u:", "ə", "ə:", "ɨ", "ɨ:"]
+    consonants: [
+        "h", "l", "m", "n", "r", "w", "s", "ʃ", "t", "d", "k", "g", 
+        "p", "b", "f", "v", "ts", "tʃ", "dʒ", "x", "ɲ", "ŋ", "j", "ʔ"
+    ]
+    diphthongs: ["aw", "aj", "ew", "ej", "ow", "oj"]
+    
+    # Stress patterns for Amharic
+    stress_patterns: ["ˈ", "ˌ", ""]
+    
+    # Syllable structure constraints
+    max_syllables_per_word: 10
+    max_phonemes_per_syllable: 4

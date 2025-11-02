@@ -1,0 +1,127 @@
+# Amharic IndexTTS2 - Web Interface Requirements
+# Complete Gradio Web Interface Dependencies
+
+# Core Gradio and Web Framework
+gradio>=4.21.0
+streamlit>=1.28.0
+fastapi>=0.104.0
+uvicorn>=0.24.0
+
+# Deep Learning and TTS Core
+torch>=2.0.0
+torchaudio>=2.0.0
+transformers>=4.35.0
+tokenizers>=0.15.0
+
+# Audio Processing
+librosa>=0.10.0
+soundfile>=0.12.0
+pydub>=0.25.0
+resampy>=0.4.0
+
+# Natural Language Processing
+sentencepiece>=0.1.99
+spacy>=3.7.0
+nltk>=3.8.0
+
+# Data Processing and Utilities
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.11.0
+pyyaml>=6.0.0
+jsonschema>=4.19.0
+
+# System and Monitoring
+psutil>=5.9.0
+GPUtil>=1.4.0
+tqdm>=4.66.0
+rich>=13.6.0
+
+# Machine Learning Utilities
+scikit-learn>=1.3.0
+matplotlib>=3.7.0
+seaborn>=0.13.0
+plotly>=5.17.0
+
+# Text Processing
+regex>=2023.10.3
+textblob>=0.17.1
+unidecode>=1.3.7
+
+# Web Interface Extensions
+gradio-client>=0.4.0
+markdown>=3.5.0
+bleach>=6.1.0
+
+# Logging and Debugging
+loguru>=0.7.0
+colorlog>=6.8.0
+
+# Development and Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+black>=23.9.0
+flake8>=6.1.0
+mypy>=1.6.0
+
+# Performance Monitoring
+memory-profiler>=0.61.0
+line-profiler>=4.1.0
+py-spy>=0.3.14
+
+# Data Validation
+cerberus>=1.3.4
+voluptuous>=0.13.1
+marshmallow>=3.20.0
+
+# File Handling
+pathlib2>=2.3.7
+watchdog>=3.0.0
+
+# HTTP Requests
+httpx>=0.25.0
+aiohttp>=3.9.0
+requests>=2.31.0
+
+# Configuration Management
+python-dotenv>=1.0.0
+click>=8.1.0
+typer>=0.9.0
+
+# Database (optional)
+sqlalchemy>=2.0.0
+alembic>=1.12.0
+
+# Notification System
+notify2>=0.3.0
+
+# Advanced Audio Features
+torch-audio>=2.0.0
+webrtcvad>=2.0.0
+
+# Optional GPU Accelerations
+bitsandbytes>=0.41.0
+flash-attn>=2.0.0
+
+# Optional Model Deployment
+onnx>=1.14.0
+onnxruntime>=1.16.0
+
+# Optional Container Support
+docker>=6.1.0
+
+# Optional Cloud Integration
+boto3>=1.34.0
+azure-storage-blob>=12.19.0
+
+# Optional Monitoring Dashboards
+dash>=2.14.0
+streamlit-option-menu>=0.3.6
+streamlit-aggrid>=0.3.0
+
+# Optional Advanced Features
+openai>=1.3.0
+anthropic>=0.3.0
+
+# Installation Instructions
+# pip install -r web_requirements.txt

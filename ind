@@ -1,0 +1,776 @@
+"""
+TensorFlow Monitoring Dashboard for Amharic IndexTTS2
+Advanced TensorFlow-based monitoring with comprehensive metrics and visualizations
+"""
+import os
+import sys
+import json
+import time
+import threading
+import numpy as np
+import pandas as pd
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Any
+import logging
+
+try:
+    import tensorflow as tf
+    TENSORFLOW_AVAILABLE = True
+except ImportError:
+    TENSORFLOW_AVAILABLE = False
+    tf = None
+
+import gradio as gr
+import matplotlib.pyplot as plt
+import seaborn as sns
+from matplotlib.figure import Figure
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
+import psutil
+
+# Set matplotlib style
+plt.style.use('seaborn-v0_8')
+sns.set_palette("husl")
+
+
+class TensorFlowMonitor:
+    """Comprehensive TensorFlow monitoring and analytics"""
+    
+    def __init__(self, log_dir: str = "logs/tensorflow"):
+        self.log_dir = Path(log_dir)
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+        
+        self.logger = self._setup_logging()
+        self.is_monitoring = False
+        self.monitor_thread = None
+        self.metrics_history = {
+            'timestamps': [],
+            'gpu_memory': [],
+            'gpu_utilization': [],
+            'cpu_usage': [],
+            'memory_usage': [],
+            'training_loss': [],
+            'validation_accuracy': [],
+            'learning_rate': [],
+            'gradient_norms': [],
+            'model_size_mb': [],
+            'inference_time_ms': [],
+            'throughput_samples_per_sec': []
+        }
+        
+        self.current_session = None
+        self.model_graph = None
+        self.session_start_time = None
+        
+        if TENSORFLOW_AVAILABLE:
+            self._initialize_tensorflow_monitoring()
+    
+    def _setup_logging(self):
+        """Setup logging for TensorFlow monitoring"""
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.FileHandler(self.log_dir / 'tensorflow_monitor.log'),
+                logging.StreamHandler()
+            ]
+        )
+        return logging.getLogger(__name__)
+    
+    def _initialize_tensorflow_monitoring(self):
+        """Initialize TensorFlow monitoring components"""
+        if not TENSORFLOW_AVAILABLE:
+            self.logger.warning("TensorFlow not available - TensorFlow monitoring disabled")
+            return
+        
+        try:
+            # Set TensorFlow logging level
+            tf.get_logger().setLevel('INFO')
+            
+            # Configure TensorFlow for monitoring
+            tf.config.set_soft_device_placement(True)
+            
+            # Enable TensorFlow Profiler
+            tf.config.run_functions_eagerly(False)
+            
+            self.logger.info("✅ TensorFlow monitoring initialized")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to initialize TensorFlow monitoring: {e}")
+    
+    def start_monitoring(self, interval: float = 1.0):
+        """Start real-time TensorFlow monitoring"""
+        if self.is_monitoring:
+            return "❌ Monitoring already in progress"
+        
+        self.is_monitoring = True
+        self.session_start_time = time.time()
+        
+        # Start monitoring thread
+        self.monitor_thread = threading.Thread(
+            target=self._monitoring_loop,
+            args=(interval,),
+            daemon=True
+        )
+        self.monitor_thread.start()
+        
+        return "🚀 TensorFlow monitoring started!"
+    
+    def stop_monitoring(self):
+        """Stop TensorFlow monitoring"""
+        self.is_monitoring = False
+        if self.monitor_thread:
+            self.monitor_thread.join(timeout=5)
+        
+        return "🛑 TensorFlow monitoring stopped"
+    
+    def _monitoring_loop(self, interval: float):
+        """Main monitoring loop"""
+        while self.is_monitoring:
+            try:
+                # Collect system metrics
+                metrics = self._collect_metrics()
+                self._update_metrics_history(metrics)
+                
+                # Save metrics to disk
+                self._save_metrics_to_disk()
+                
+                time.sleep(interval)
+                
+            except Exception as e:
+                self.logger.error(f"Error in monitoring loop: {e}")
+                time.sleep(interval)
+    
+    def _collect_metrics(self) -> Dict:
+        """Collect comprehensive metrics"""
+        metrics = {
+            'timestamp': time.time(),
+            'datetime': datetime.now().isoformat()
+        }
+        
+        # System metrics
+        metrics['cpu_percent'] = psutil.cpu_percent(interval=1)
+        metrics['memory_percent'] = psutil.virtual_memory().percent
+        metrics['memory_used_gb'] = psutil.virtual_memory().used / 1024**3
+        metrics['memory_total_gb'] = psutil.virtual_memory().total / 1024**3
+        
+        # GPU metrics
+        if TENSORFLOW_AVAILABLE and tf.config.list_physical_devices('GPU'):
+            try:
+                gpus = tf.config.list_physical_devices('GPU')
+                metrics['gpu_count'] = len(gpus)
+                
+                # GPU memory usage
+                gpu_memory = []
+                for gpu in gpus:
+                    memory_info = tf.config.experimental.get_memory_info(gpu.name)
+                    gpu_memory.append({
+                        'device': gpu.name,
+                        'current': memory_info['current'] / 1024**3,
+                        'peak': memory_info['peak'] / 1024**3
+                    })
+                metrics['gpu_memory'] = gpu_memory
+                
+                # GPU utilization (if available)
+                metrics['gpu_utilization'] = self._get_gpu_utilization()
+                
+            except Exception as e:
+                self.logger.error(f"Error collecting GPU metrics: {e}")
+                metrics['gpu_error'] = str(e)
+        
+        # TensorFlow-specific metrics
+        if TENSORFLOW_AVAILABLE:
+            metrics.update(self._collect_tensorflow_metrics())
+        
+        return metrics
+    
+    def _get_gpu_utilization(self) -> List[Dict]:
+        """Get GPU utilization metrics"""
+        try:
+            # This is a simplified GPU utilization metric
+            # In practice, you might use nvidia-ml-py or similar
+            import GPUtil
+            gpus = GPUtil.getGPUs()
+            return [
+                {
+                    'id': gpu.id,
+                    'name': gpu.name,
+                    'load': gpu.load * 100,
+                    'memory_used': gpu.memoryUsed,
+                    'memory_total': gpu.memoryTotal,
+                    'temperature': gpu.temperature
+                }
+                for gpu in gpus
+            ]
+        except:
+            return []
+    
+    def _collect_tensorflow_metrics(self) -> Dict:
+        """Collect TensorFlow-specific metrics"""
+        tf_metrics = {}
+        
+        try:
+            # TensorFlow version info
+            tf_metrics['tensorflow_version'] = tf.__version__
+            
+            # Available GPUs
+            gpus = tf.config.list_physical_devices('GPU')
+            tf_metrics['available_gpus'] = len(gpus)
+            
+            # Memory statistics
+            for i, gpu in enumerate(gpus):
+                memory_info = tf.config.experimental.get_memory_info(gpu.name)
+                tf_metrics[f'gpu_{i}_memory_mb'] = memory_info['current'] / 1024**2
+            
+            # Performance hints
+            tf_metrics['mixed_precision_enabled'] = tf.config.optimizer.get_experimental_options().get('mixed_precision', False)
+            
+        except Exception as e:
+            tf_metrics['error'] = str(e)
+        
+        return tf_metrics
+    
+    def _update_metrics_history(self, metrics: Dict):
+        """Update metrics history"""
+        try:
+            timestamp = metrics['timestamp']
+            
+            # Update history arrays
+            self.metrics_history['timestamps'].append(timestamp)
+            self.metrics_history['cpu_usage'].append(metrics.get('cpu_percent', 0))
+            self.metrics_history['memory_usage'].append(metrics.get('memory_percent', 0))
+            
+            # GPU metrics
+            gpu_memory = 0
+            if 'gpu_memory' in metrics:
+                gpu_memory = sum(gpu['current'] for gpu in metrics['gpu_memory'])
+            
+            self.metrics_history['gpu_memory'].append(gpu_memory)
+            
+            # Keep only last 1000 data points
+            for key in self.metrics_history:
+                if len(self.metrics_history[key]) > 1000:
+                    self.metrics_history[key] = self.metrics_history[key][-1000:]
+            
+        except Exception as e:
+            self.logger.error(f"Error updating metrics history: {e}")
+    
+    def _save_metrics_to_disk(self):
+        """Save metrics to disk for persistence"""
+        try:
+            metrics_file = self.log_dir / "metrics_history.json"
+            with open(metrics_file, 'w') as f:
+                json.dump(self.metrics_history, f, indent=2)
+        except Exception as e:
+            self.logger.error(f"Error saving metrics: {e}")
+    
+    def get_current_metrics(self) -> Dict:
+        """Get current system metrics"""
+        return self._collect_metrics()
+    
+    def get_system_performance_chart(self) -> Figure:
+        """Generate system performance chart"""
+        if not self.metrics_history['timestamps']:
+            fig, ax = plt.subplots(figsize=(12, 8))
+            ax.text(0.5, 0.5, 'No monitoring data available\nStart monitoring to see metrics',
+                   ha='center', va='center', fontsize=16)
+            ax.set_title('System Performance Overview')
+            return fig
+        
+        # Create subplots
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
+        fig.suptitle('TensorFlow System Performance Dashboard', fontsize=16, fontweight='bold')
+        
+        timestamps = [datetime.fromtimestamp(t) for t in self.metrics_history['timestamps']]
+        
+        # CPU Usage
+        ax1.plot(timestamps, self.metrics_history['cpu_usage'], color='#FF6B6B', linewidth=2)
+        ax1.set_title('CPU Usage (%)', fontweight='bold')
+        ax1.set_ylabel('CPU %')
+        ax1.grid(True, alpha=0.3)
+        ax1.set_ylim(0, 100)
+        
+        # Memory Usage
+        ax2.plot(timestamps, self.metrics_history['memory_usage'], color='#4ECDC4', linewidth=2)
+        ax2.set_title('Memory Usage (%)', fontweight='bold')
+        ax2.set_ylabel('Memory %')
+        ax2.grid(True, alpha=0.3)
+        ax2.set_ylim(0, 100)
+        
+        # GPU Memory
+        if any(self.metrics_history['gpu_memory']):
+            ax3.plot(timestamps, self.metrics_history['gpu_memory'], color='#45B7D1', linewidth=2)
+            ax3.set_title('GPU Memory Usage (GB)', fontweight='bold')
+            ax3.set_ylabel('GPU Memory (GB)')
+            ax3.grid(True, alpha=0.3)
+        
+        # Combined System Load
+        ax4.plot(timestamps, self.metrics_history['cpu_usage'], label='CPU %', color='#FF6B6B', alpha=0.7)
+        ax4.plot(timestamps, self.metrics_history['memory_usage'], label='Memory %', color='#4ECDC4', alpha=0.7)
+        if any(self.metrics_history['gpu_memory']):
+            # Scale GPU memory to percentage for comparison
+            gpu_memory_scaled = [gm / max(self.metrics_history['gpu_memory']) * 100 if max(self.metrics_history['gpu_memory']) > 0 else 0 for gm in self.metrics_history['gpu_memory']]
+            ax4.plot(timestamps, gpu_memory_scaled, label='GPU Memory %', color='#45B7D1', alpha=0.7)
+        ax4.set_title('Combined System Load', fontweight='bold')
+        ax4.set_ylabel('Usage %')
+        ax4.legend()
+        ax4.grid(True, alpha=0.3)
+        ax4.set_ylim(0, 100)
+        
+        # Format timestamps
+        for ax in [ax1, ax2, ax3, ax4]:
+            ax.tick_params(axis='x', rotation=45)
+        
+        plt.tight_layout()
+        return fig
+    
+    def get_training_metrics_chart(self) -> Figure:
+        """Generate training metrics visualization"""
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
+        fig.suptitle('TensorFlow Training Analytics', fontsize=16, fontweight='bold')
+        
+        if not self.metrics_history['timestamps']:
+            for ax in [ax1, ax2, ax3, ax4]:
+                ax.text(0.5, 0.5, 'No training data available\nPerform training to see metrics',
+                       ha='center', va='center', fontsize=14)
+            return fig
+        
+        timestamps = [datetime.fromtimestamp(t) for t in self.metrics_history['timestamps']]
+        
+        # Loss curve
+        if self.metrics_history['training_loss']:
+            ax1.plot(timestamps, self.metrics_history['training_loss'], color='#E74C3C', linewidth=2, marker='o', markersize=3)
+            ax1.set_title('Training Loss Curve', fontweight='bold')
+            ax1.set_ylabel('Loss')
+            ax1.grid(True, alpha=0.3)
+        else:
+            ax1.text(0.5, 0.5, 'Training Loss\nNo data available', ha='center', va='center', fontsize=12)
+        
+        # Validation Accuracy
+        if self.metrics_history['validation_accuracy']:
+            ax2.plot(timestamps, self.metrics_history['validation_accuracy'], color='#27AE60', linewidth=2, marker='s', markersize=3)
+            ax2.set_title('Validation Accuracy', fontweight='bold')
+            ax2.set_ylabel('Accuracy (%)')
+            ax2.grid(True, alpha=0.3)
+        else:
+            ax2.text(0.5, 0.5, 'Validation Accuracy\nNo data available', ha='center', va='center', fontsize=12)
+        
+        # Learning Rate
+        if self.metrics_history['learning_rate']:
+            ax3.plot(timestamps, self.metrics_history['learning_rate'], color='#8E44AD', linewidth=2)
+            ax3.set_title('Learning Rate Schedule', fontweight='bold')
+            ax3.set_ylabel('Learning Rate')
+            ax3.grid(True, alpha=0.3)
+            ax3.set_yscale('log')
+        else:
+            ax3.text(0.5, 0.5, 'Learning Rate\nNo data available', ha='center', va='center', fontsize=12)
+        
+        # Gradient Norms
+        if self.metrics_history['gradient_norms']:
+            ax4.plot(timestamps, self.metrics_history['gradient_norms'], color='#F39C12', linewidth=2)
+            ax4.set_title('Gradient Norms', fontweight='bold')
+            ax4.set_ylabel('Gradient Norm')
+            ax4.grid(True, alpha=0.3)
+            ax4.set_yscale('log')
+        else:
+            ax4.text(0.5, 0.5, 'Gradient Norms\nNo data available', ha='center', va='center', fontsize=12)
+        
+        # Format timestamps
+        for ax in [ax1, ax2, ax3, ax4]:
+            ax.tick_params(axis='x', rotation=45)
+        
+        plt.tight_layout()
+        return fig
+    
+    def get_performance_heatmap(self) -> Figure:
+        """Generate performance heatmap"""
+        if not self.metrics_history['timestamps']:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.text(0.5, 0.5, 'No performance data available\nStart monitoring to see heatmap',
+                   ha='center', va='center', fontsize=14)
+            ax.set_title('Performance Heatmap')
+            return fig
+        
+        # Create performance matrix
+        metrics_matrix = np.array([
+            self.metrics_history['cpu_usage'][-60:],  # Last 60 data points
+            self.metrics_history['memory_usage'][-60:],
+            self.metrics_history['gpu_memory'][-60:] if self.metrics_history['gpu_memory'] else [0] * 60
+        ])
+        
+        if metrics_matrix.shape[1] == 0:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.text(0.5, 0.5, 'Insufficient data for heatmap',
+                   ha='center', va='center', fontsize=14)
+            ax.set_title('Performance Heatmap')
+            return fig
+        
+        # Normalize data for heatmap
+        metrics_matrix = np.array(metrics_matrix, dtype=float)
+        if metrics_matrix.shape[0] > 0 and metrics_matrix.shape[1] > 0:
+            for i in range(metrics_matrix.shape[0]):
+                max_val = np.max(metrics_matrix[i]) if np.max(metrics_matrix[i]) > 0 else 1
+                metrics_matrix[i] = metrics_matrix[i] / max_val * 100
+        
+        # Create heatmap
+        fig, ax = plt.subplots(figsize=(14, 6))
+        im = ax.imshow(metrics_matrix, cmap='YlOrRd', aspect='auto', interpolation='nearest')
+        
+        # Set labels
+        ax.set_title('System Performance Heatmap (Last 60 Data Points)', fontweight='bold', fontsize=14)
+        ax.set_ylabel('Metrics')
+        ax.set_xlabel('Time Points')
+        
+        # Custom labels for metrics
+        metric_labels = ['CPU Usage', 'Memory Usage', 'GPU Memory']
+        ax.set_yticks(range(len(metric_labels)))
+        ax.set_yticklabels(metric_labels)
+        
+        # Add colorbar
+        cbar = plt.colorbar(im, ax=ax)
+        cbar.set_label('Usage (%)', rotation=270, labelpad=15)
+        
+        # Add grid
+        ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        return fig
+    
+    def get_model_info(self) -> Dict:
+        """Get detailed model information"""
+        model_info = {
+            'tensorflow_available': TENSORFLOW_AVAILABLE,
+            'tensorflow_version': tf.__version__ if TENSORFLOW_AVAILABLE else None,
+            'monitoring_active': self.is_monitoring,
+            'session_uptime': time.time() - self.session_start_time if self.session_start_time else 0,
+            'data_points_collected': len(self.metrics_history['timestamps'])
+        }
+        
+        if TENSORFLOW_AVAILABLE:
+            try:
+                # GPU information
+                gpus = tf.config.list_physical_devices('GPU')
+                model_info['gpu_devices'] = len(gpus)
+                
+                if gpus:
+                    gpu_details = []
+                    for i, gpu in enumerate(gpus):
+                        memory_info = tf.config.experimental.get_memory_info(gpu.name)
+                        gpu_details.append({
+                            'device_name': gpu.name,
+                            'memory_current_gb': memory_info['current'] / 1024**3,
+                            'memory_peak_gb': memory_info['peak'] / 1024**3
+                        })
+                    model_info['gpu_details'] = gpu_details
+                
+                # System configuration
+                model_info['logical_cores'] = psutil.cpu_count(logical=True)
+                model_info['physical_cores'] = psutil.cpu_count(logical=False)
+                model_info['total_memory_gb'] = psutil.virtual_memory().total / 1024**3
+                
+            except Exception as e:
+                model_info['error'] = str(e)
+        
+        return model_info
+    
+    def log_training_metrics(self, loss: float, accuracy: float = None, learning_rate: float = None, 
+                           gradient_norm: float = None, inference_time: float = None, throughput: float = None):
+        """Log training metrics for visualization"""
+        timestamp = time.time()
+        
+        if self.metrics_history['timestamps'] and timestamp - self.metrics_history['timestamps'][-1] < 1:
+            # Don't log if less than 1 second has passed
+            return
+        
+        self.metrics_history['timestamps'].append(timestamp)
+        self.metrics_history['training_loss'].append(loss)
+        
+        if accuracy is not None:
+            self.metrics_history['validation_accuracy'].append(accuracy)
+        else:
+            self.metrics_history['validation_accuracy'].append(0)
+        
+        if learning_rate is not None:
+            self.metrics_history['learning_rate'].append(learning_rate)
+        else:
+            self.metrics_history['learning_rate'].append(0)
+        
+        if gradient_norm is not None:
+            self.metrics_history['gradient_norms'].append(gradient_norm)
+        else:
+            self.metrics_history['gradient_norms'].append(0)
+        
+        # Add current system metrics to maintain consistency
+        current_metrics = self._collect_metrics()
+        self.metrics_history['cpu_usage'].append(current_metrics.get('cpu_percent', 0))
+        self.metrics_history['memory_usage'].append(current_metrics.get('memory_percent', 0))
+        
+        gpu_memory = 0
+        if 'gpu_memory' in current_metrics:
+            gpu_memory = sum(gpu['current'] for gpu in current_metrics['gpu_memory'])
+        self.metrics_history['gpu_memory'].append(gpu_memory)
+        
+        # Limit history size
+        max_history = 1000
+        for key in self.metrics_history:
+            if len(self.metrics_history[key]) > max_history:
+                self.metrics_history[key] = self.metrics_history[key][-max_history:]
+
+
+class TensorFlowDashboard:
+    """TensorFlow monitoring dashboard integrated with Gradio"""
+    
+    def __init__(self):
+        self.monitor = TensorFlowMonitor()
+    
+    def create_tensorflow_tab(self) -> gr.Column:
+        """Create TensorFlow monitoring tab"""
+        with gr.Column(elem_classes=["tab-content"]):
+            
+            # TensorFlow System Overview
+            with gr.Accordion("🤖 TensorFlow System Overview", open=True):
+                with gr.Row():
+                    tf_status = gr.JSON(label="TensorFlow Status", value=self.monitor.get_model_info())
+                    refresh_tf_status_btn = gr.Button("🔄 Refresh Status", variant="secondary")
+                
+                refresh_tf_status_btn.click(
+                    fn=self.monitor.get_model_info,
+                    outputs=[tf_status]
+                )
+            
+            # Real-time Monitoring
+            with gr.Accordion("📊 Real-time Monitoring", open=True):
+                with gr.Row():
+                    start_monitor_btn = gr.Button("🚀 Start Monitoring", variant="primary")
+                    stop_monitor_btn = gr.Button("🛑 Stop Monitoring", variant="stop")
+                    auto_refresh = gr.Checkbox(label="Auto Refresh (5s)", value=False)
+                
+                monitoring_status = gr.Textbox(label="Monitoring Status", interactive=False)
+                
+                # Real-time metrics display
+                current_metrics = gr.JSON(label="Current Metrics", value={})
+                
+                start_monitor_btn.click(
+                    fn=self._start_monitoring_with_status,
+                    outputs=[monitoring_status, current_metrics]
+                )
+                
+                stop_monitor_btn.click(
+                    fn=self._stop_monitoring_with_status,
+                    outputs=[monitoring_status, current_metrics]
+                )
+            
+            # Performance Visualizations
+            with gr.Accordion("📈 Performance Visualizations", open=True):
+                with gr.Row():
+                    system_chart = gr.Plot(label="System Performance Chart")
+                    training_chart = gr.Plot(label="Training Metrics Chart")
+                
+                with gr.Row():
+                    refresh_charts_btn = gr.Button("🔄 Refresh Charts", variant="secondary")
+                    heatmap = gr.Plot(label="Performance Heatmap")
+                
+                refresh_charts_btn.click(
+                    fn=self._generate_all_charts,
+                    outputs=[system_chart, training_chart, heatmap]
+                )
+            
+            # TensorFlow Specific Metrics
+            with gr.Accordion("🔍 TensorFlow Analytics", open=False):
+                with gr.Row():
+                    tf_version_info = gr.Textbox(label="TensorFlow Information", interactive=False)
+                    gpu_info = gr.JSON(label="GPU Information", value={})
+                
+                # Custom TensorFlow metrics logging
+                with gr.Row():
+                    log_loss = gr.Number(label="Training Loss", value=0.0)
+                    log_accuracy = gr.Number(label="Validation Accuracy", value=0.0)
+                    log_lr = gr.Number(label="Learning Rate", value=0.001)
+                
+                with gr.Row():
+                    log_gradient = gr.Number(label="Gradient Norm", value=1.0)
+                    log_inference_time = gr.Number(label="Inference Time (ms)", value=0.0)
+                    log_throughput = gr.Number(label="Throughput (samples/sec)", value=0.0)
+                
+                log_metrics_btn = gr.Button("📝 Log Metrics", variant="primary")
+                log_status = gr.Textbox(label="Logging Status", interactive=False)
+                
+                log_metrics_btn.click(
+                    fn=self._log_training_metrics,
+                    inputs=[log_loss, log_accuracy, log_lr, log_gradient, log_inference_time, log_throughput],
+                    outputs=[log_status]
+                )
+            
+            # TensorFlow Profiler
+            with gr.Accordion("🔬 TensorFlow Profiler", open=False):
+                profiler_status = gr.Textbox(label="Profiler Status", interactive=False)
+                profiler_results = gr.JSON(label="Profiler Results", value={})
+                
+                with gr.Row():
+                    start_profiler_btn = gr.Button("🔬 Start Profiler", variant="secondary")
+                    stop_profiler_btn = gr.Button("⏹️ Stop Profiler", variant="stop")
+                    get_profiler_btn = gr.Button("📊 Get Profile", variant="secondary")
+                
+                # TensorFlow Extended Metrics
+                extended_metrics = gr.JSON(label="Extended Metrics", value={})
+            
+        return gr.Column()
+    
+    def _start_monitoring_with_status(self):
+        """Start monitoring and return status"""
+        status = self.monitor.start_monitoring()
+        current_metrics = self.monitor.get_current_metrics()
+        return status, current_metrics
+    
+    def _stop_monitoring_with_status(self):
+        """Stop monitoring and return status"""
+        status = self.monitor.stop_monitoring()
+        current_metrics = self.monitor.get_current_metrics()
+        return status, current_metrics
+    
+    def _generate_all_charts(self):
+        """Generate all performance charts"""
+        system_chart = self.monitor.get_system_performance_chart()
+        training_chart = self.monitor.get_training_metrics_chart()
+        heatmap = self.monitor.get_performance_heatmap()
+        return system_chart, training_chart, heatmap
+    
+    def _log_training_metrics(self, loss, accuracy, lr, gradient, inference_time, throughput):
+        """Log training metrics"""
+        self.monitor.log_training_metrics(loss, accuracy, lr, gradient, inference_time, throughput)
+        return "✅ Metrics logged successfully"
+    
+    def get_tensorflow_tab_interface(self):
+        """Get the TensorFlow monitoring tab interface"""
+        return self.create_tensorflow_tab()
+
+
+def create_enhanced_gradio_app():
+    """Create enhanced Gradio app with TensorFlow monitoring"""
+    
+    class EnhancedAmharicTTSGradioApp(AmharicTTSGradioApp):
+        """Enhanced version with TensorFlow monitoring"""
+        
+        def __init__(self):
+            super().__init__()
+            self.tensorflow_dashboard = TensorFlowDashboard()
+        
+        def create_interface(self):
+            """Create enhanced interface with TensorFlow tab"""
+            
+            # Custom CSS for enhanced design
+            css = """
+            .main-container {
+                max-width: 1400px !important;
+                margin: auto !important;
+                padding: 20px !important;
+            }
+            
+            .gradio-container {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 15px;
+                padding: 15px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            }
+            
+            .section-header {
+                background: rgba(255, 255, 255, 0.15);
+                border-radius: 12px;
+                padding: 20px;
+                margin: 15px 0;
+                border-left: 5px solid #4CAF50;
+                backdrop-filter: blur(10px);
+            }
+            
+            .tab-content {
+                background: rgba(255, 255, 255, 0.95);
+                border-radius: 15px;
+                padding: 25px;
+                margin: 15px 0;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                backdrop-filter: blur(5px);
+            }
+            
+            .tensorboard-style {
+                background: linear-gradient(145deg, #1e3c72 0%, #2a5298 100%);
+                color: white;
+                border-radius: 10px;
+                padding: 15px;
+            }
+            
+            .advanced-metrics {
+                background: linear-gradient(145deg, #ff6b6b 0%, #ee5a24 100%);
+                color: white;
+                border-radius: 10px;
+                padding: 15px;
+            }
+            
+            .performance-panel {
+                background: linear-gradient(145deg, #4ecdc4 0%, #44a08d 100%);
+                color: white;
+                border-radius: 10px;
+                padding: 15px;
+            }
+            """
+            
+            with gr.Blocks(css=css, title="Amharic IndexTTS2 - Professional TTS Platform with TensorFlow Analytics", theme=gr.themes.Soft()) as app:
+                
+                # Enhanced Header
+                gr.HTML("""
+                <div class="section-header">
+                    <h1>🎙️ Amharic IndexTTS2</h1>
+                    <h3>Professional Text-to-Speech with TensorFlow Analytics</h3>
+                    <p>Complete solution for Amharic TTS with advanced TensorFlow monitoring and visualization</p>
+                    <div style="display: flex; gap: 20px; margin-top: 15px;">
+                        <span style="background: rgba(76,175,80,0.2); padding: 5px 10px; border-radius: 5px;">🚀 Advanced Training</span>
+                        <span style="background: rgba(33,150,243,0.2); padding: 5px 10px; border-radius: 5px;">🤖 TensorFlow Analytics</span>
+                        <span style="background: rgba(255,193,7,0.2); padding: 5px 10px; border-radius: 5px;">📊 Real-time Monitoring</span>
+                        <span style="background: rgba(156,39,176,0.2); padding: 5px 10px; border-radius: 5px;">🎵 Professional Inference</span>
+                    </div>
+                </div>
+                """)
+                
+                # Main tabs with enhanced TensorFlow monitoring
+                with gr.TabbedInterface([
+                    self.create_training_tab(),
+                    self.create_inference_tab(),
+                    self.tensorflow_dashboard.get_tensorflow_tab_interface(),
+                    self.create_system_tab(),
+                    self.create_model_management_tab()
+                ], [
+                    "🚀 Training",
+                    "🎵 Inference", 
+                    "🤖 TensorFlow Analytics",
+                    "📊 System",
+                    "📁 Models"
+                ]):
+                    pass
+                
+                # Enhanced Footer
+                gr.HTML("""
+                <div style="text-align: center; margin-top: 40px; padding: 25px; background: rgba(255,255,255,0.1); border-radius: 15px; backdrop-filter: blur(10px);">
+                    <h3>🎯 Amharic IndexTTS2 Platform</h3>
+                    <p><strong>Powered by:</strong> IndexTTS2 • TensorFlow Analytics • Advanced Training Optimizations</p>
+                    <p><strong>Features:</strong> SDPA • EMA • Mixed Precision • Gradient Checkpointing • Real-time Monitoring</p>
+                    <p><strong>Built with ❤️ for Ethiopian Language Technology</strong></p>
+                    <div style="display: flex; justify-content: center; gap: 15px; margin-top: 15px;">
+                        <span style="background: rgba(76,175,80,0.3); padding: 8px 12px; border-radius: 8px;">Production Ready</span>
+                        <span style="background: rgba(33,150,243,0.3); padding: 8px 12px; border-radius: 8px;">Enterprise Grade</span>
+                        <span style="background: rgba(255,193,7,0.3); padding: 8px 12px; border-radius: 8px;">Scalable</span>
+                    </div>
+                </div>
+                """)
+            
+            return app
+    
+    return EnhancedAmharicTTSGradioApp()
+
+
+if __name__ == "__main__":
+    # Test TensorFlow monitoring
+    monitor = TensorFlowMonitor()
+    print("TensorFlow Monitor initialized")
+    print(f"TensorFlow Available: {TENSORFLOW_AVAILABLE}")
+    print(f"Initial Metrics: {monitor.get_model_info()}")

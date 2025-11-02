@@ -1,0 +1,292 @@
+# Amharic-specific configuration for IndexTTS2 fine-tuning - FULL LAYER TRAINING
+# Optimized for 200-hour dataset with T4 GPU (16GB VRAM) - ALL LAYERS TRAINING
+
+dataset:
+    bpe_model: amharic_bpe.model
+    sample_rate: 24000
+    squeeze: false
+    mel:
+        sample_rate: 24000
+        n_fft: 1024
+        hop_length: 256
+        win_length: 1024
+        n_mels: 100
+        mel_fmin: 0
+        normalize: false
+
+gpt:
+    model_dim: 1280
+    max_mel_tokens: 1815
+    max_text_tokens: 600
+    heads: 20
+    use_mel_codes_as_input: true
+    mel_length_compression: 1024
+    layers: 24  # FULL LAYERS TRAINING - ALL LAYERS ACTIVE
+    number_text_tokens: 12000  # Increased for 200hr dataset
+    number_mel_codes: 8194
+    start_mel_token: 8192
+    stop_mel_token: 8193
+    start_text_token: 0
+    stop_text_token: 1
+    train_solo_embeddings: true  # TRAIN ALL EMBEDDINGS
+    condition_type: "conformer_perceiver"
+    condition_module:
+        output_size: 512
+        linear_units: 2048
+        attention_heads: 8
+        num_blocks: 6
+        input_layer: "conv2d2"
+        perceiver_mult: 2
+    emo_condition_module:
+        output_size: 512
+        linear_units: 1024
+        attention_heads: 4
+        num_blocks: 4
+        input_layer: "conv2d2"
+        perceiver_mult: 2
+
+# LoRA DISABLED - FULL LAYER TRAINING
+lora:
+    enabled: false  # DISABLED - Community proven LoRA fails for new languages
+    rank: 0
+    alpha: 0
+    dropout: 0
+    target_modules: []
+
+# Training configuration - FULL LAYER TRAINING FOR 200hr dataset
+training:
+    # Core training parameters for full layers
+    num_epochs: 8  # INCREASED: Full training needs more epochs
+    batch_size: 1  # REDUCED: Full training needs smaller batches
+    learning_rate: 2e-5  # REDUCED: Full training needs lower LR
+    warmup_steps: 3000  # INCREASED: More warmup for full training
+    gradient_clip_val: 0.3  # TIGHTER: Full training needs tighter clipping
+    save_every: 250  # MORE FREQUENT: Full training checkpoints
+    log_every: 25   # MORE FREQUENT: Full training monitoring
+    weight_decay: 0.01
+    
+    # Anti-overfitting measures (CRITICAL for 200hr + full training)
+    validation_split: 0.15  # More validation data
+    early_stopping_patience: 4  # INCREASED patience for full training
+    min_epochs_before_early_stop: 4  # DON'T stop too early with full training
+    
+    # Gradient accumulation for larger effective batch size (FULL TRAINING)
+    gradient_accumulation_steps: 16  # INCREASED: Effective batch size: 1 * 16 = 16
+    max_grad_norm: 0.3
+    
+    # Data augmentation for diversity
+    augmentation:
+        speed_perturbation: true
+        speed_range: [0.9, 1.1]  # Subtle speed changes
+        pitch_perturbation: true
+        pitch_range: [-0.5, 0.5]  # Semitones
+        noise_injection: true
+        noise_level: 0.005  # Very low noise
+        time_stretching: true
+        stretch_range: [0.9, 1.1]
+        
+    # Advanced regularization (FULL TRAINING REQUIREMENTS)
+    regularization:
+        dropout: 0.25  # HIGHER dropout for full training
+        label_smoothing: 0.2  # INCREASED smoothing
+        layer_dropout: 0.15  # Layer dropout for full training
+        attention_dropout: 0.2  # Higher attention dropout
+        hidden_dropout: 0.15  # Hidden state dropout
+        
+    # Memory optimization for T4 GPU - FULL TRAINING
+    memory_optimization:
+        mixed_precision: true  # CRITICAL: FP16 essential for full training
+        gradient_checkpointing: true  # CRITICAL: Save VRAM for full training
+        activation_checkpointing: true  # CRITICAL: Checkpoint activations
+        low_memory_mode: true  # Additional memory saving
+        cpu_offload: true  # NEW: Offload to CPU when possible
+
+# Amharic-specific text processing
+amharic_text:
+    normalize_umlauts: false  # Keep Amharic script intact
+    expand_contractions: true
+    expand_abbreviations: true
+    normalize_numbers: true
+    normalize_punctuation: true
+    
+    # Character variant normalization (important for Amharic)
+    character_variants:
+        "ሥ": "ስ"  # normalize ሥ to ስ
+        "እ": "ኧ"  # normalize እ to ኧ (modern orthography)
+        "ዕ": "እ"  # normalize ዕ to እ
+        
+    # Number expansion (comprehensive for Amharic)
+    contractions:
+        "ከሆነ": "ከ ሆነ"
+        "እንደሆነ": "እንደ ሆነ"
+        "እንዲሁም": "እንዲሁ እንዲሁ"
+        
+    abbreviations:
+        "ም.ም.": "ምሳሌ ምሳሌ"
+        "ዶ/ር": "ዶክተር"
+        "ፕ/ር": "ፕሮፌሰር"
+
+# Evaluation configuration
+evaluation:
+    metrics:
+        - "cer"  # Character Error Rate
+        - "wer"  # Word Error Rate
+        - "mos"  # Mean Opinion Score
+        - "speaker_similarity"
+        - "emotion_accuracy"
+        - "duration_accuracy"
+        
+    test_sets:
+        - "in_domain"      # Test on training domain
+        - "out_of_domain"  # Test on unseen data
+        - "emotional"      # Test emotion transfer
+        - "long_utterances" # Test longer sequences
+        - "cross_speaker"   # Test voice cloning
+        
+    # Amharic-specific evaluation
+    amharic_evaluation:
+        phoneme_accuracy: true
+        stress_accuracy: true
+        rhythm_accuracy: true
+        intonation_accuracy: true
+        script_fidelity: true  # Ensure proper Amharic script
+
+# Model paths
+model_paths:
+    pretrained_model: "checkpoints/gpt.pth"
+    amharic_vocab: "amharic_bpe.model"
+    speaker_encoder: "checkpoints/spk_matrix.pt"
+    emotion_encoder: "checkpoints/emo_matrix.pt"
+    vocoder: "nvidia/bigvgan_v2_22khz_80band_256x"
+
+# Output configuration - FULL TRAINING
+output:
+    checkpoint_dir: "checkpoints/amharic_200hr_full_training"
+    log_dir: "logs/amharic_200hr_full_training"
+    sample_dir: "samples/amharic_200hr_full_training"
+    tensorboard_dir: "runs/amharic_200hr_full_training"
+    
+    # Checkpoint saving strategy - FULL TRAINING
+    save_best: true
+    save_last: true
+    save_every_n_epochs: 1
+    save_top_k: 5  # INCREASED: More checkpoints for full training
+    
+    # Sample generation (for monitoring training)
+    generate_samples_every: 125  # MORE FREQUENT sampling for full training
+    num_samples: 3
+    sample_texts:
+        - "ሰላም ዓለም! ይህ የአማርኛ ሙከራ ነው።"
+        - "መልካም ቀን! እንደምን አደርኩልዎት?"
+        - "ይህ ዘመቻ ለአማርኛ TTS ስልጠና ነው።"
+
+# Hardware configuration (T4 GPU optimized - FULL TRAINING)
+hardware:
+    device: "cuda"
+    num_workers: 1  # REDUCED: Full training needs more memory
+    pin_memory: true
+    mixed_precision: true  # CRITICAL: Must be true for full training
+    gradient_checkpointing: true  # CRITICAL for full training
+    
+    # T4 GPU specific optimizations - FULL TRAINING
+    memory_efficient_attention: true  # Save VRAM
+    activation_checkpointing: true
+    gradient_accumulation_steps: 16  # INCREASED: Effective batch size = 16
+    
+    # CPU utilization - FULL TRAINING
+    dataloader_num_workers: 1  # REDUCED for memory
+    dataloader_pin_memory: true
+    cpu_offload: true  # NEW: CPU offloading for memory
+
+# Logging configuration - FULL TRAINING
+logging:
+    level: "INFO"
+    log_to_file: true
+    log_to_console: true
+    log_to_wandb: true  # CRITICAL for monitoring full training
+    
+    # Wandb configuration for full training
+    wandb:
+        project: "indextts2-amharic-full-training"
+        entity: null
+        tags: ["amharic", "tts", "200hr", "full-training", "no-lora", "t4-gpu"]
+        notes: "200-hour Amharic fine-tuning with FULL LAYER training (No LoRA)"
+        log_freq: 25  # MORE FREQUENT logging
+        save_freq: 250
+
+# Data configuration (200hr dataset - FULL TRAINING)
+data:
+    # Larger splits for 200hr dataset
+    train_split: 0.85  # 170hr for training
+    val_split: 0.15    # 30hr for validation
+    
+    # Data filtering (more lenient for large dataset)
+    min_duration: 0.5  # Include shorter clips
+    max_duration: 15.0  # Allow longer utterances
+    min_text_length: 3  # Minimum text length
+    max_text_length: 800  # Allow longer text
+    
+    # Data augmentation probability (higher for diversity)
+    augmentation_prob: 0.8  # INCREASED: More augmentation for full training
+    speed_range: [0.9, 1.1]  # Wider speed variation
+    pitch_range: [-1.0, 1.0]  # Wider pitch range
+    noise_level: 0.01
+    
+    # Dataset quality checks
+    quality_filtering:
+        min_snr: 10  # Signal-to-noise ratio
+        max_clipped_ratio: 0.01  # Allow some clipping
+        enable_quality_filtering: true
+
+# Anti-overfitting monitoring - ENHANCED FOR FULL TRAINING
+monitoring:
+    # Metrics to track for overfitting detection
+    overfitting_indicators:
+        - "train_loss_vs_val_loss"
+        - "validation_cer_trend"
+        - "speaker_similarity_drift"
+        - "emotion_accuracy_degradation"
+        - "per_layer_loss_distribution"  # NEW: Monitor all layers
+        
+    # Early intervention triggers
+    intervention_triggers:
+        val_loss_increase_streak: 3  # INCREASED patience for full training
+        train_val_loss_gap_threshold: 0.15  # SLIGHTLY increased threshold
+        validation_cer_increase: 0.05  # Alert if CER increases by 5%
+        layer_saturation_indicator: true  # NEW: Monitor layer saturation
+        
+    # Checkpoint selection criteria
+    checkpoint_selection:
+        primary_metric: "validation_cer"  # Use CER for selection
+        secondary_metric: "validation_loss"
+        selection_strategy: "best_primary_then_secondary"
+
+# Amharic-specific phoneme configuration
+phonemes:
+    # Amharic phoneme set (comprehensive)
+    vowels: ["a", "a:", "e", "e:", "i", "i:", "o", "o:", "u", "u:", "ə", "ə:", "ɨ", "ɨ:"]
+    consonants: [
+        "h", "l", "m", "n", "r", "w", "s", "ʃ", "t", "d", "k", "g", 
+        "p", "b", "f", "v", "ts", "tʃ", "dʒ", "x", "ɲ", "ŋ", "j", "ʔ"
+    ]
+    diphthongs: ["aw", "aj", "ew", "ej", "ow", "oj"]
+    
+    # Stress patterns for Amharic
+    stress_patterns: ["ˈ", "ˌ", ""]
+    
+    # Syllable structure constraints
+    max_syllables_per_word: 10
+    max_phonemes_per_syllable: 4
+
+# FULL TRAINING SPECIFIC SETTINGS
+full_training_settings:
+    enabled: true  # DISABLE LoRA, ENABLE full training
+    train_all_layers: true
+    train_embeddings: true
+    train_layernorms: true
+    train_positional_embeddings: true
+    memory_optimization_level: "maximum"  # For T4 GPU
+    gradient_checkpointing: true
+    activation_checkpointing: true
+    cpu_offload: true
+    offload_optimizer: true  # NEW: Offload optimizer states
