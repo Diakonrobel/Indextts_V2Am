@@ -549,20 +549,17 @@ class AmharicTTSGradioApp:
             """)
             
             # Main tabs
-            with gr.TabbedInterface([
-                self.create_training_tab(),
-                self.create_inference_tab(),
-                self.create_comparison_tab(),
-                self.create_system_tab(),
-                self.create_model_management_tab()
-            ], [
-                "🚀 Training",
-                "🎵 Inference",
-                "🔬 Comparison",
-                "📊 System",
-                "📁 Models"
-            ]):
-                pass
+            with gr.Tabs():
+                with gr.TabItem("🚀 Training"):
+                    self.create_training_tab()
+                with gr.TabItem("🎵 Inference"):
+                    self.create_inference_tab()
+                with gr.TabItem("🔬 Comparison"):
+                    self.create_comparison_tab()
+                with gr.TabItem("📊 System"):
+                    self.create_system_tab()
+                with gr.TabItem("📁 Models"):
+                    self.create_model_management_tab()
             
             # Footer
             gr.HTML("""
