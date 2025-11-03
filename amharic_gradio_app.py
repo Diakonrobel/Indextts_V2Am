@@ -475,94 +475,281 @@ class AmharicTTSGradioApp:
     def create_interface(self):
         """Create the complete Gradio interface"""
         
-        # Enhanced Professional CSS
+        # Modern Dark Theme CSS - Professional & Clean
         css = """
+        /* Global Dark Theme */
+        :root {
+            --primary-bg: #0f1419;
+            --secondary-bg: #1a1f2e;
+            --card-bg: #1e2533;
+            --accent-primary: #667eea;
+            --accent-secondary: #764ba2;
+            --accent-success: #4CAF50;
+            --accent-warning: #FFC107;
+            --accent-error: #F44336;
+            --text-primary: #e8eaed;
+            --text-secondary: #9aa0a6;
+            --border-color: #2d3748;
+        }
+        
+        .gradio-container {
+            background: var(--primary-bg) !important;
+            color: var(--text-primary) !important;
+        }
+        
         .main-container {
             max-width: 1400px !important;
             margin: auto !important;
             padding: 20px !important;
         }
         
+        /* Stunning Header with Glassmorphism */
         .main-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 2rem;
-            border-radius: 10px;
+            padding: 2.5rem;
+            border-radius: 15px;
             margin-bottom: 2rem;
             color: white;
             text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
         }
         
-        .gradio-container {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 10px;
-            padding: 10px;
-        }
-        
+        /* Section Headers - Dark Mode */
         .section-header {
-            background: rgba(102, 126, 234, 0.1);
-            border-left: 4px solid #667eea;
+            background: rgba(102, 126, 234, 0.15);
+            border-left: 4px solid var(--accent-primary);
             padding: 1rem;
             margin: 1rem 0;
-            border-radius: 5px;
+            border-radius: 8px;
+            color: var(--text-primary);
         }
         
+        /* Status Boxes - Dark Variants */
         .status-box {
-            background: rgba(76, 175, 80, 0.1);
-            border: 1px solid #4CAF50;
-            border-radius: 5px;
+            background: rgba(76, 175, 80, 0.15);
+            border: 1px solid var(--accent-success);
+            border-radius: 8px;
             padding: 1rem;
             margin: 0.5rem 0;
+            color: #81c784;
         }
         
         .warning-box {
-            background: rgba(255, 193, 7, 0.1);
-            border: 1px solid #FFC107;
-            border-radius: 5px;
+            background: rgba(255, 193, 7, 0.15);
+            border: 1px solid var(--accent-warning);
+            border-radius: 8px;
             padding: 1rem;
             margin: 0.5rem 0;
+            color: #ffd54f;
         }
         
         .error-box {
-            background: rgba(244, 67, 54, 0.1);
-            border: 1px solid #F44336;
-            border-radius: 5px;
+            background: rgba(244, 67, 54, 0.15);
+            border: 1px solid var(--accent-error);
+            border-radius: 8px;
             padding: 1rem;
             margin: 0.5rem 0;
+            color: #e57373;
         }
         
+        /* Card Containers - Glassmorphism */
         .tab-content {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin: 10px 0;
+            background: rgba(30, 37, 51, 0.6) !important;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 15px 0;
         }
         
         .control-panel {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 10px 0;
+            background: rgba(26, 31, 46, 0.8);
+            border-radius: 10px;
+            padding: 18px;
+            margin: 12px 0;
+            border: 1px solid var(--border-color);
         }
         
+        /* Tab Navigation - Enhanced */
         .tab-nav button {
             font-size: 16px !important;
-            padding: 12px 24px !important;
+            padding: 14px 28px !important;
+            border-radius: 8px !important;
+            transition: all 0.3s ease !important;
+            background: rgba(26, 31, 46, 0.6) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        
+        .tab-nav button:hover {
+            background: rgba(102, 126, 234, 0.2) !important;
+            border-color: var(--accent-primary) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+        }
+        
+        .tab-nav button.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border-color: var(--accent-primary) !important;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5) !important;
+        }
+        
+        /* Buttons - Modern Dark Style */
+        button {
+            border-radius: 8px !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border: none !important;
+            color: white !important;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+        }
+        
+        .primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6) !important;
+        }
+        
+        .secondary {
+            background: rgba(102, 126, 234, 0.2) !important;
+            border: 1px solid var(--accent-primary) !important;
+            color: var(--accent-primary) !important;
+        }
+        
+        .secondary:hover {
+            background: rgba(102, 126, 234, 0.3) !important;
+        }
+        
+        /* Input Fields - Dark Mode */
+        input, textarea, select {
+            background: rgba(26, 31, 46, 0.8) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-primary) !important;
+            border-radius: 8px !important;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--accent-primary) !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
+        }
+        
+        /* Accordions - Dark Mode */
+        .accordion {
+            background: rgba(26, 31, 46, 0.6) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 10px !important;
+        }
+        
+        /* Progress Bars */
+        .progress-bar {
+            background: linear-gradient(90deg, var(--accent-primary) 0%, var(--accent-secondary) 100%) !important;
+            border-radius: 10px;
+            height: 8px;
+        }
+        
+        /* Dataframes/Tables */
+        table {
+            background: rgba(26, 31, 46, 0.6) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+        
+        table th {
+            background: rgba(102, 126, 234, 0.2) !important;
+            color: var(--text-primary) !important;
+            font-weight: 600;
+        }
+        
+        table tr:hover {
+            background: rgba(102, 126, 234, 0.1) !important;
+        }
+        
+        /* Scrollbars - Custom Dark */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--secondary-bg);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #7c8ef5 0%, #8a5bb3 100%);
+        }
+        
+        /* Labels - Enhanced Visibility */
+        label {
+            color: var(--text-primary) !important;
+            font-weight: 500 !important;
+        }
+        
+        /* JSON Display - Dark Mode */
+        .json-holder {
+            background: rgba(15, 20, 25, 0.8) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+            padding: 15px !important;
+        }
+        
+        /* Hover Effects */
+        .hover-lift:hover {
+            transform: translateY(-3px);
+            transition: transform 0.3s ease;
+        }
+        
+        /* Glow Effect for Active Elements */
+        .glow {
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(102, 126, 234, 0.8); }
         }
         """
         
-        with gr.Blocks(css=css, title="Amharic IndexTTS2 - Professional TTS Platform", theme=gr.themes.Soft()) as app:
+        # Use modern dark theme
+        dark_theme = gr.themes.Base(
+            primary_hue="violet",
+            secondary_hue="purple",
+            neutral_hue="slate",
+        ).set(
+            body_background_fill="*neutral_950",
+            body_background_fill_dark="*neutral_950",
+            background_fill_primary="*neutral_900",
+            background_fill_primary_dark="*neutral_900",
+            background_fill_secondary="*neutral_800",
+            background_fill_secondary_dark="*neutral_800",
+            border_color_primary="*neutral_700",
+            border_color_primary_dark="*neutral_700",
+        )
+        
+        with gr.Blocks(css=css, title="Amharic IndexTTS2 - Professional TTS Platform", theme=dark_theme) as app:
             
-            # Enhanced Header
+            # Stunning Dark Theme Header
             gr.HTML("""
             <div class="main-header">
-                <h1 style="margin: 0; font-size: 2.5em;">🎙️ Amharic IndexTTS2</h1>
-                <h2 style="margin: 0.5em 0; font-size: 1.5em;">Professional Text-to-Speech Training & Inference Platform</h2>
-                <p style="margin: 0.5em 0;">Complete solution for Amharic TTS with advanced training optimizations</p>
-                <p style="margin: 0; opacity: 0.9; font-size: 0.9em;">
-                    <strong>Features:</strong> Live Training Monitor | Prosody Controls | Quality Metrics | A/B Testing | Batch Processing
-                </p>
+                <h1 style="margin: 0; font-size: 2.8em; font-weight: 700; text-shadow: 0 2px 20px rgba(102, 126, 234, 0.5);">🎙️ Amharic IndexTTS2</h1>
+                <h2 style="margin: 0.5em 0; font-size: 1.6em; font-weight: 500;">Professional Text-to-Speech Training & Inference Platform</h2>
+                <p style="margin: 0.8em 0; font-size: 1.05em; opacity: 0.95;">🇪🇹 Complete solution for Amharic TTS with advanced training optimizations</p>
+                <div style="margin-top: 1em; padding: 1em; background: rgba(0,0,0,0.2); border-radius: 8px; display: inline-block;">
+                    <p style="margin: 0; font-size: 0.95em; opacity: 0.95;">
+                        <strong>✨ Features:</strong> Live Training Monitor • Prosody Controls • Quality Metrics • A/B Testing • Batch Processing
+                    </p>
+                </div>
             </div>
             """)
             
@@ -579,22 +766,30 @@ class AmharicTTSGradioApp:
                 with gr.TabItem("📁 Model Management", id=4):
                     self.create_model_management_tab()
             
-            # Enhanced Footer
+            # Elegant Dark Theme Footer
             gr.HTML("""
-            <div style="text-align: center; margin-top: 30px; padding: 20px; background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%); border-radius: 10px; border: 1px solid rgba(102,126,234,0.3);">
-                <p style="margin: 0.5em 0; font-size: 1.1em; font-weight: bold;">🇪🇹 Amharic IndexTTS2 Platform</p>
-                <p style="margin: 0.5em 0;">Built with ❤️ for Ethiopian Language Technology</p>
-                <p style="margin: 0.5em 0; font-size: 0.9em; color: #666;">
-                    <strong>Advanced Features:</strong> SDPA Optimization • EMA Smoothing • Mixed Precision • Gradient Checkpointing • Amharic Prosody
-                </p>
+            <div style="text-align: center; margin-top: 40px; padding: 25px; background: linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.15) 100%); border-radius: 12px; border: 1px solid rgba(102,126,234,0.3); backdrop-filter: blur(10px);">
+                <p style="margin: 0.6em 0; font-size: 1.2em; font-weight: 700; color: #e8eaed;">🇪🇹 Amharic IndexTTS2 Platform</p>
+                <p style="margin: 0.5em 0; font-size: 1.05em; color: #b8bdc6;">Built with ❤️ for Ethiopian Language Technology</p>
+                <div style="margin-top: 1em; padding: 0.8em; background: rgba(0,0,0,0.3); border-radius: 8px; display: inline-block;">
+                    <p style="margin: 0; font-size: 0.9em; color: #9aa0a6;">
+                        <strong style="color: #667eea;">⚡ Advanced Features:</strong> SDPA Optimization • EMA Smoothing • Mixed Precision • Gradient Checkpointing • Amharic Prosody
+                    </p>
+                </div>
             </div>
             """)
         
         return app
     
     def create_training_tab(self):
-        """Create training management tab"""
+        """Create training management tab with modern dark design"""
         with gr.Column(elem_classes=["tab-content"]):
+            gr.Markdown("""
+            <div style="text-align: center; padding: 1em; background: rgba(102, 126, 234, 0.1); border-radius: 8px; margin-bottom: 1em;">
+                <h2 style="margin: 0; color: #667eea;">🚀 Training Hub</h2>
+                <p style="margin: 0.5em 0; color: #9aa0a6;">Upload datasets, configure training, and monitor progress in real-time</p>
+            </div>
+            """)
             
             # Dataset Management
             with gr.Accordion("📁 Dataset Management", open=False):
@@ -750,8 +945,14 @@ class AmharicTTSGradioApp:
         return gr.Column()
     
     def create_inference_tab(self):
-        """Create inference tab"""
+        """Create inference tab with modern dark design"""
         with gr.Column(elem_classes=["tab-content"]):
+            gr.Markdown("""
+            <div style="text-align: center; padding: 1em; background: rgba(102, 126, 234, 0.1); border-radius: 8px; margin-bottom: 1em;">
+                <h2 style="margin: 0; color: #667eea;">🎵 Inference Studio</h2>
+                <p style="margin: 0.5em 0; color: #9aa0a6;">Generate natural Amharic speech with advanced prosody controls</p>
+            </div>
+            """)
             
             # Model Loading
             with gr.Accordion("🤖 Model Loading", open=True):
@@ -905,10 +1106,14 @@ class AmharicTTSGradioApp:
         return gr.Column()
     
     def create_comparison_tab(self):
-        """Create model comparison A/B testing tab"""
+        """Create model comparison A/B testing tab with modern dark design"""
         with gr.Column(elem_classes=["tab-content"]):
-            gr.Markdown("## 🔬 Compare Two Amharic TTS Models")
-            gr.Markdown("Load two models and compare their outputs side-by-side")
+            gr.Markdown("""
+            <div style="text-align: center; padding: 1em; background: rgba(102, 126, 234, 0.1); border-radius: 8px; margin-bottom: 1em;">
+                <h2 style="margin: 0; color: #667eea;">🔬 Model Comparison Lab</h2>
+                <p style="margin: 0.5em 0; color: #9aa0a6;">Load two models and compare their outputs side-by-side with automated quality analysis</p>
+            </div>
+            """)
             
             with gr.Row():
                 with gr.Column():
@@ -984,8 +1189,14 @@ class AmharicTTSGradioApp:
         return gr.Column()
     
     def create_system_tab(self):
-        """Create system monitoring tab"""
+        """Create system monitoring tab with modern dark design"""
         with gr.Column(elem_classes=["tab-content"]):
+            gr.Markdown("""
+            <div style="text-align: center; padding: 1em; background: rgba(102, 126, 234, 0.1); border-radius: 8px; margin-bottom: 1em;">
+                <h2 style="margin: 0; color: #667eea;">📊 System Monitor</h2>
+                <p style="margin: 0.5em 0; color: #9aa0a6;">Track GPU usage, checkpoints, and system resources</p>
+            </div>
+            """)
             
             # System Resources
             with gr.Accordion("💻 System Resources", open=True):
@@ -1040,8 +1251,14 @@ class AmharicTTSGradioApp:
         return gr.Column()
     
     def create_model_management_tab(self):
-        """Create model management tab"""
+        """Create model management tab with modern dark design"""
         with gr.Column(elem_classes=["tab-content"]):
+            gr.Markdown("""
+            <div style="text-align: center; padding: 1em; background: rgba(102, 126, 234, 0.1); border-radius: 8px; margin-bottom: 1em;">
+                <h2 style="margin: 0; color: #667eea;">📁 Model Management</h2>
+                <p style="margin: 0.5em 0; color: #9aa0a6;">Manage, export, and validate your trained Amharic models</p>
+            </div>
+            """)
             
             # Model Information
             with gr.Accordion("📊 Current Model Info", open=True):

@@ -67,13 +67,18 @@ This project implements fine-tuning capabilities for IndexTTS2, a text-to-speech
   - **System Monitor:** GPU/memory/process monitoring, system logs viewer
   - **Settings:** Model preferences, UI themes, cache management
   - Design inspired by XTTS v2 webui (D:\FINETUNE-XTTS-WEBUI-LIGHTNING\xtts-finetune-webui-fresh)
-- `amharic_gradio_app.py` - ✅ **PRIMARY AMHARIC WEBUI** - Professional platform with XTTS v2-inspired UI:
-  - **Enhanced Professional Design (NEW):**
-    - Gradient header with feature highlights
-    - Enhanced CSS with modern styling
-    - Tab navigation with emoji icons and IDs
-    - Professional button styling (primary, size=lg)
-    - Improved footer with gradient background
+- `amharic_gradio_app.py` - ✅ **PRIMARY AMHARIC WEBUI** - Professional platform with modern dark theme:
+  - **Modern Dark Theme Design (LATEST):**
+    - Full dark mode with CSS variables (--primary-bg: #0f1419)
+    - Glassmorphism effects on cards and header
+    - Gradient header with text shadows and feature highlights
+    - Enhanced tab navigation (hover effects, selected states, transitions)
+    - Professional button styling (gradient primary, outline secondary)
+    - Custom purple gradient scrollbars
+    - Dark mode inputs with focus glow
+    - Pulse animations for active elements
+    - Professional table styling with hover states
+    - Section headers for each tab (Training Hub, Inference Studio, etc.)
   - **Required Models (NOT auto-downloadable yet):**
     - `amharic_bpe.model` - Amharic vocabulary
     - `checkpoints/bigvgan_v2_22khz_80band_256x/` - Vocoder
