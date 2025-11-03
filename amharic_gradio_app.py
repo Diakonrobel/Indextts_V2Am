@@ -643,7 +643,7 @@ class AmharicTTSGradioApp:
                     batch_size = gr.Slider(1, 8, value=1, step=1, label="Batch Size")
                 
                 with gr.Row():
-                    learning_rate = gr.Number(value=2e-5, label="Learning Rate", scientific=True)
+                    learning_rate = gr.Number(value=0.00002, label="Learning Rate")
                     gradient_accumulation = gr.Slider(1, 32, value=16, step=1, label="Gradient Accumulation Steps")
                 
                 # Advanced Optimizations
@@ -1087,7 +1087,7 @@ def main():
     interface.launch(
         server_name="0.0.0.0",
         server_port=7860,
-        share=False,
+        share=True,
         inbrowser=True,
         show_error=True,
         quiet=False,
