@@ -30,7 +30,17 @@ This project implements fine-tuning capabilities for IndexTTS2, a text-to-speech
 - `validate_amharic_*.py` - Various Amharic validation scripts
 
 ## Web Interfaces
-- `webui.py` - Main web interface for TTS
+- `webui.py` - Original web interface for TTS
+- `webui_enhanced.py` - ✅ NEW PROFESSIONAL UI with comprehensive tab/subtab organization:
+  - **Main Tabs:** Inference, Batch Processing, Training, Dataset Tools, Model Management, System Monitor, Settings
+  - **Inference Tab:** Speaker reference, emotion control (4 modes), text input, advanced generation settings, examples
+  - **Batch Processing:** Multi-text generation with same voice settings
+  - **Training Tab:** Dataset config, training control, real-time metrics & loss curves
+  - **Dataset Tools:** Audio preprocessing, text processing, manifest generation
+  - **Model Management:** Checkpoint browser, export to PyTorch/ONNX/TorchScript
+  - **System Monitor:** GPU/memory/process monitoring, system logs viewer
+  - **Settings:** Model preferences, UI themes, cache management
+  - Design inspired by XTTS v2 webui (D:\FINETUNE-XTTS-WEBUI-LIGHTNING\xtts-finetune-webui-fresh)
 - `amharic_gradio_app.py` - ✅ FULLY ENHANCED with:
   - Live training monitoring with real-time loss plots
   - Audio quality metrics display (RMS, peak, ZCR, quality score)
