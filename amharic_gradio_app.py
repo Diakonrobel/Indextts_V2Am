@@ -1093,12 +1093,8 @@ def main():
         server_name="0.0.0.0",
         server_port=7860,
         share=True,
-        inbrowser=True,
         show_error=True,
-        quiet=False,
-        show_tips=True,
-        height=800,
-        title="Amharic IndexTTS2 - Professional TTS Platform"
+        quiet=False
     )
 
 
