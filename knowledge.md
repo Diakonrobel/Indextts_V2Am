@@ -67,7 +67,7 @@ This project implements fine-tuning capabilities for IndexTTS2, a text-to-speech
   - **System Monitor:** GPU/memory/process monitoring, system logs viewer
   - **Settings:** Model preferences, UI themes, cache management
   - Design inspired by XTTS v2 webui (D:\FINETUNE-XTTS-WEBUI-LIGHTNING\xtts-finetune-webui-fresh)
-- `amharic_gradio_app.py` - ✅ **PRIMARY AMHARIC WEBUI** - Professional platform with modern dark theme:
+- `amharic_gradio_app.py` - ✅ **PRIMARY AMHARIC WEBUI** - Professional platform with modern dark theme + **COMPREHENSIVE DATASET PROCESSING** (NEW!):
   - **Modern Dark Theme Design (LATEST):**
     - Full dark mode with CSS variables (--primary-bg: #0f1419)
     - Glassmorphism effects on cards and header
@@ -84,7 +84,7 @@ This project implements fine-tuning capabilities for IndexTTS2, a text-to-speech
     - `checkpoints/bigvgan_v2_22khz_80band_256x/` - Vocoder
     - Amharic fine-tuned checkpoints
   - **Main Tabs (5 tabs):**
-    1. 🚀 Training - Dataset management, training config, live monitoring
+    1. 🚀 Training - **ENHANCED WITH COMPREHENSIVE DATASET PROCESSING**
     2. 🎵 Inference - Single/batch generation with prosody controls
     3. 🔬 Model Comparison - A/B testing interface
     4. 📊 System Monitor - GPU/memory/checkpoints
@@ -96,6 +96,14 @@ This project implements fine-tuning capabilities for IndexTTS2, a text-to-speech
     - Model comparison (A/B testing)
     - Batch processing support
     - System resource monitoring
+  - **NEW: Integrated Dataset Processing (Training Tab):**
+    - **File Upload:** Audio (WAV/MP3/FLAC/M4A/OGG) + Text + Subtitles (SRT/VTT)
+    - **Web URL Processing:** YouTube, Vimeo downloads with auto-subtitle extraction (4-8 parallel)
+    - **Processing Modes:** Traditional (paired files), SRT/VTT (subtitle alignment), VAD-only (audio slicing)
+    - **Amharic Text Normalization:** Uses `AmharicTextNormalizer` for proper preprocessing
+    - **Quality Controls:** SNR threshold (10-40dB), denoising toggle, VAD slicing
+    - **Automatic Validation:** Quality filtering, duration checks, audio metrics
+    - **No Duplication:** Replaces old basic upload/prepare with comprehensive processor
 - `launch_gradio.py` - Launch script
 - Utilities:
   - `indextts/utils/live_training_monitor.py` - Real-time visualization

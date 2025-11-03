@@ -34,6 +34,7 @@ from indextts.utils.audio_quality_metrics import calculate_audio_quality_metrics
 from indextts.utils.amharic_prosody import AmharicProsodyController
 from indextts.utils.model_comparator import ModelComparator
 from indextts.utils.batch_processor import BatchTTSProcessor
+from indextts.utils.dataset_processor import ComprehensiveDatasetProcessor
 
 
 class AmharicTTSGradioApp:
@@ -71,6 +72,17 @@ class AmharicTTSGradioApp:
         self.prosody_controller = AmharicProsodyController()
         self.model_comparator = ModelComparator()
         self.batch_processor = None
+        
+        # Initialize comprehensive dataset processor
+        self.dataset_processor = ComprehensiveDatasetProcessor(
+            output_dir="processed_datasets",
+            sample_rate=24000,
+            min_duration=1.0,
+            max_duration=10.0,
+            min_snr_db=20.0,
+            denoise=False,
+            validate_quality=True
+        )
         
         # Load default models if available
         self.load_default_models()
@@ -151,38 +163,57 @@ class AmharicTTSGradioApp:
         self.state['available_checkpoints'] = checkpoints
         return checkpoints
     
-    def upload_dataset(self, audio_files, text_files, dataset_name):
-        """Handle dataset upload and preparation"""
-        if not audio_files or not text_files or not dataset_name:
-            return "❌ Please provide audio files, text files, and dataset name"
+    def upload_dataset(self, audio_files, text_files, subtitle_files, dataset_name):
+        """Handle comprehensive dataset upload with SRT/VTT support"""
+        if not dataset_name:
+            return "❌ Please provide dataset name"
+        
+        if not audio_files and not subtitle_files:
+            return "❌ Please provide audio files or subtitle files"
         
         try:
             # Create dataset directory
             dataset_dir = Path(f"datasets/{dataset_name}")
             audio_dir = dataset_dir / "audio"
             text_dir = dataset_dir / "text"
+            subtitle_dir = dataset_dir / "subtitles"
             
-            audio_dir.mkdir(parents=True, exist_ok=True)
-            text_dir.mkdir(parents=True, exist_ok=True)
+            for dir_path in [audio_dir, text_dir, subtitle_dir]:
+                dir_path.mkdir(parents=True, exist_ok=True)
             
             # Copy audio files
-            for i, audio_file in enumerate(audio_files):
-                shutil.copy2(audio_file, audio_dir / f"audio_{i:04d}.wav")
+            audio_count = 0
+            if audio_files:
+                for i, audio_file in enumerate(audio_files):
+                    shutil.copy2(audio_file, audio_dir / f"audio_{i:04d}.wav")
+                    audio_count += 1
             
             # Copy text files
-            for i, text_file in enumerate(text_files):
-                shutil.copy2(text_file, text_dir / f"text_{i:04d}.txt")
+            text_count = 0
+            if text_files:
+                for i, text_file in enumerate(text_files):
+                    shutil.copy2(text_file, text_dir / f"text_{i:04d}.txt")
+                    text_count += 1
+            
+            # Copy subtitle files (SRT/VTT)
+            subtitle_count = 0
+            if subtitle_files:
+                for i, subtitle_file in enumerate(subtitle_files):
+                    ext = Path(subtitle_file).suffix
+                    shutil.copy2(subtitle_file, subtitle_dir / f"subtitle_{i:04d}{ext}")
+                    subtitle_count += 1
             
             self.logger.info(f"✅ Dataset '{dataset_name}' uploaded successfully")
-            return f"✅ Dataset '{dataset_name}' uploaded successfully!\n📊 Files: {len(audio_files)} audio, {len(text_files)} text"
+            return f"✅ Dataset '{dataset_name}' uploaded successfully!\n📊 Files: {audio_count} audio, {text_count} text, {subtitle_count} subtitles"
             
         except Exception as e:
             error_msg = f"❌ Error uploading dataset: {str(e)}"
             self.logger.error(error_msg)
             return error_msg
     
-    def prepare_dataset(self, dataset_name, min_duration, max_duration, sample_rate):
-        """Prepare uploaded dataset for training"""
+    def prepare_dataset(self, dataset_name, processing_mode, min_duration, max_duration, 
+                       sample_rate, min_snr, enable_denoise, enable_vad):
+        """Prepare uploaded dataset with comprehensive Amharic preprocessing"""
         if not dataset_name:
             return "❌ Please specify a dataset name"
         
@@ -191,22 +222,57 @@ class AmharicTTSGradioApp:
             if not dataset_dir.exists():
                 return f"❌ Dataset '{dataset_name}' not found"
             
-            # Run dataset preparation
-            prepare_script = "scripts/prepare_amharic_data.py"
-            cmd = [
-                "python", prepare_script,
-                "--audio_dir", str(dataset_dir / "audio"),
-                "--text_dir", str(dataset_dir / "text"),
-                "--output_dir", f"amharic_dataset_{dataset_name}",
-                "--min_duration", str(min_duration),
-                "--max_duration", str(max_duration),
-                "--sample_rate", str(sample_rate)
-            ]
+            # Update processor config
+            self.dataset_processor.sample_rate = sample_rate
+            self.dataset_processor.audio_slicer.min_duration = min_duration
+            self.dataset_processor.audio_slicer.max_duration = max_duration
+            self.dataset_processor.audio_slicer.denoise = enable_denoise
+            self.dataset_processor.quality_validator.min_snr_db = min_snr
             
             # Run in background thread
-            threading.Thread(target=self._run_dataset_preparation, args=(cmd,)).start()
+            def process_in_background():
+                try:
+                    # Check for SRT/VTT files
+                    subtitle_dir = dataset_dir / "subtitles"
+                    audio_dir = dataset_dir / "audio"
+                    
+                    if processing_mode == "srt_vtt" and subtitle_dir.exists():
+                        # Process with SRT/VTT
+                        subtitle_files = list(subtitle_dir.glob("*.srt")) + list(subtitle_dir.glob("*.vtt"))
+                        audio_files = list(audio_dir.glob("*.wav")) + list(audio_dir.glob("*.mp3"))
+                        
+                        if subtitle_files and audio_files:
+                            # Process each pair
+                            samples, stats = self.dataset_processor.process_from_srt_vtt(
+                                media_path=str(audio_files[0]),
+                                subtitle_path=str(subtitle_files[0]),
+                                dataset_name=dataset_name
+                            )
+                            self.logger.info(f"✅ Processed {stats.processed} samples with SRT/VTT")
+                        else:
+                            self.logger.error("No matching SRT/VTT and audio files found")
+                    else:
+                        # Traditional processing with Amharic normalizer
+                        from scripts.prepare_amharic_data import AmharicDatasetPreparer
+                        
+                        preparer = AmharicDatasetPreparer(
+                            audio_dir=str(audio_dir),
+                            text_dir=str(dataset_dir / "text"),
+                            output_dir=f"processed_datasets/{dataset_name}",
+                            sample_rate=sample_rate,
+                            min_duration=min_duration,
+                            max_duration=max_duration
+                        )
+                        
+                        manifest_paths = preparer.prepare_dataset()
+                        self.logger.info(f"✅ Amharic dataset prepared: {manifest_paths}")
+                        
+                except Exception as e:
+                    self.logger.error(f"Dataset preparation failed: {e}")
             
-            return f"🔄 Dataset preparation started for '{dataset_name}'\nThis may take several minutes depending on dataset size."
+            threading.Thread(target=process_in_background).start()
+            
+            return f"🔄 Dataset preparation started for '{dataset_name}'\n📋 Mode: {processing_mode}\n⏳ This may take several minutes..."
             
         except Exception as e:
             error_msg = f"❌ Error preparing dataset: {str(e)}"
@@ -799,9 +865,27 @@ class AmharicTTSGradioApp:
                 upload_status = gr.Textbox(label="Upload Status", interactive=False)
                 upload_btn.click(
                     fn=self.upload_dataset,
-                    inputs=[audio_files, text_files, dataset_name],
+                    inputs=[audio_files, text_files, subtitle_files, dataset_name],
                     outputs=[upload_status]
                 )
+                
+                gr.Markdown("---")
+                gr.Markdown("### 🌐 Web URL Processing")
+                
+                urls_input = gr.Textbox(
+                    label="URLs (one per line)",
+                    lines=5,
+                    placeholder="https://www.youtube.com/watch?v=...\nhttps://example.com/video.mp4",
+                    info="Supports YouTube, Vimeo, and direct media URLs"
+                )
+                
+                with gr.Row():
+                    web_dataset_name = gr.Textbox(label="Dataset Name", placeholder="web_dataset")
+                    max_workers = gr.Slider(1, 8, value=4, step=1, label="Parallel Downloads")
+                    web_extract_subs = gr.Checkbox(label="Extract Subtitles", value=True)
+                
+                process_urls_btn = gr.Button("🌐 Download & Process URLs", variant="primary")
+                web_status = gr.Textbox(label="Processing Status", interactive=False)
             
             # Dataset Preparation
             with gr.Accordion("🔄 Dataset Preparation", open=False):
@@ -819,8 +903,17 @@ class AmharicTTSGradioApp:
                 
                 prepare_btn.click(
                     fn=self.prepare_dataset,
-                    inputs=[prep_dataset_name, min_duration, max_duration, sample_rate],
+                    inputs=[prep_dataset_name, processing_mode, min_duration, max_duration, 
+                           sample_rate, min_snr, enable_denoise, enable_vad],
                     outputs=[prepare_status]
+                )
+                
+                # Wire up web URL processing
+                process_urls_btn.click(
+                    fn=self.process_web_urls,
+                    inputs=[urls_input, web_dataset_name, max_workers, web_extract_subs,
+                           min_snr, enable_denoise],
+                    outputs=[web_status]
                 )
             
             # Training Configuration

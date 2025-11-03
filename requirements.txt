@@ -312,3 +312,20 @@ importlib-metadata>=6.8.0,<9.0.0; python_version < '3.12'
 #    pip install -r requirements.txt --upgrade --force-reinstall
 #
 # ========================================================================
+  
+# ========================================================================
+# DATASET PROCESSING DEPENDENCIES
+# ========================================================================
+
+# SRT/VTT subtitle parsing
+pysrt>=1.1.2
+webvtt-py>=0.4.6
+
+# Web media downloads
+yt-dlp>=2023.12.0
+
+# Audio denoising
+noisereduce>=2.0.1
+
+# Rich console output
+rich>=13.0.0
