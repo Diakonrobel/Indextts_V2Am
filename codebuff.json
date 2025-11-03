@@ -1,0 +1,19 @@
+{
+  "description": "Template configuration for this project. See https://www.codebuff.com/config for all options.",
+  "startupProcesses": [
+    {
+      "name": "webui",
+      "command": "python webui.py",
+      "enabled": false,
+      "stdoutFile": "logs/webui.log"
+    },
+    {
+      "name": "gradio",
+      "command": "python launch_gradio.py",
+      "enabled": false,
+      "stdoutFile": "logs/gradio.log"
+    }
+  ],
+  "fileChangeHooks": [],
+  "maxAgentSteps": 25
+}

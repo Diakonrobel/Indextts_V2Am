@@ -29,6 +29,11 @@ from indextts.utils.amharic_front import AmharicTextTokenizer, AmharicTextNormal
 from indextts.gpt.model_v2 import UnifiedVoice
 from indextts.s2mel.modules.bigvgan import BigVGAN
 from scripts.optimized_full_layer_finetune_amharic import OptimizedFullLayerTrainer
+from indextts.utils.live_training_monitor import LiveTrainingMonitor
+from indextts.utils.audio_quality_metrics import calculate_audio_quality_metrics
+from indextts.utils.amharic_prosody import AmharicProsodyController
+from indextts.utils.model_comparator import ModelComparator
+from indextts.utils.batch_processor import BatchTTSProcessor
 
 
 class AmharicTTSGradioApp:
@@ -62,6 +67,10 @@ class AmharicTTSGradioApp:
         self.current_vocoder = None
         self.training_process = None
         self.is_training = False
+        self.training_monitor = LiveTrainingMonitor()
+        self.prosody_controller = AmharicProsodyController()
+        self.model_comparator = ModelComparator()
+        self.batch_processor = None
         
         # Load default models if available
         self.load_default_models()
@@ -386,6 +395,58 @@ class AmharicTTSGradioApp:
             self.logger.error(error_msg)
             return None, error_msg
     
+    def generate_speech_with_metrics(self, text, voice_id, emotion, speed, pitch,
+                                     temperature, max_new_tokens, sample_rate,
+                                     gemination=1.0, ejective=1.0, duration=1.0, stress="penultimate"):
+        """Generate speech with prosody controls and quality metrics"""
+        if not self.current_model or not self.current_tokenizer:
+            return (None, "❌ Load model first", {}, 0, 0, 0, 0, 0, "")
+        
+        if not text.strip():
+            return (None, "❌ Enter text", {}, 0, 0, 0, 0, 0, "")
+        
+        try:
+            # Apply prosody controls
+            prosody_info = self.prosody_controller.apply_ejective_emphasis(text, ejective)
+            self.prosody_controller.apply_duration_control(duration)
+            
+            # Generate audio
+            audio_path, status = self.generate_speech(
+                text, voice_id, emotion, speed, pitch,
+                temperature, max_new_tokens, sample_rate
+            )
+            
+            if audio_path is None:
+                return (None, status, {}, 0, 0, 0, 0, 0, "")
+            
+            # Calculate quality metrics
+            metrics = calculate_audio_quality_metrics(audio_path)
+            
+            # Format quality flags
+            flags = []
+            if metrics.get('is_clipping'):
+                flags.append("⚠️ Clipping")
+            if metrics.get('is_too_quiet'):
+                flags.append("⚠️ Too quiet")
+            if metrics.get('is_noisy'):
+                flags.append("⚠️ Noisy")
+            flags_text = " | ".join(flags) if flags else "✅ All checks passed"
+            
+            return (
+                audio_path,
+                status,
+                prosody_info,
+                metrics.get('rms_energy', 0),
+                metrics.get('peak_level', 0),
+                metrics.get('zero_crossing_rate', 0),
+                metrics.get('duration_seconds', 0),
+                metrics.get('quality_score', 0),
+                flags_text
+            )
+        
+        except Exception as e:
+            return (None, f"❌ Error: {e}", {}, 0, 0, 0, 0, 0, "")
+    
     def batch_generate(self, texts, voice_id, emotion, speed, sample_rate):
         """Generate speech for multiple texts"""
         if not self.current_model:
@@ -483,11 +544,13 @@ class AmharicTTSGradioApp:
             with gr.TabbedInterface([
                 self.create_training_tab(),
                 self.create_inference_tab(),
+                self.create_comparison_tab(),
                 self.create_system_tab(),
                 self.create_model_management_tab()
             ], [
                 "🚀 Training",
-                "🎵 Inference", 
+                "🎵 Inference",
+                "🔬 Comparison",
                 "📊 System",
                 "📁 Models"
             ]):
@@ -593,19 +656,53 @@ class AmharicTTSGradioApp:
                 stop_training_btn = gr.Button("🛑 Stop Training", variant="stop", size="lg")
             
             # Training Monitoring
-            with gr.Accordion("📊 Training Monitoring", open=True):
+            with gr.Accordion("📊 Live Training Monitoring", open=True):
+                # Live loss plot
+                loss_plot = gr.Plot(label="Loss Curve (Live)")
+                
+                # Current metrics
+                with gr.Row():
+                    current_step = gr.Number(label="Current Step", interactive=False)
+                    current_loss = gr.Number(label="Current Loss", interactive=False)
+                    min_loss = gr.Number(label="Best Loss", interactive=False)
+                
+                # Training status
                 training_status = gr.Textbox(
                     label="Training Status",
-                    lines=10,
+                    lines=6,
                     interactive=False
                 )
-                refresh_btn = gr.Button("🔄 Refresh Status", variant="secondary")
                 
-                # Real-time updates
-                app = gr.load_instance(app=None)
-                refresh_btn.click(
-                    fn=self.get_training_status,
-                    outputs=[training_status]
+                # Auto-refresh controls
+                with gr.Row():
+                    auto_refresh = gr.Checkbox(label="Auto-Refresh (5s)", value=True)
+                    manual_refresh_btn = gr.Button("🔄 Refresh Now", variant="secondary")
+                
+                # Setup auto-refresh timer
+                def update_training_monitor():
+                    log_file = Path("logs/training/current_training.log")
+                    plot = self.training_monitor.parse_training_log(str(log_file))
+                    metrics = self.training_monitor.get_current_metrics()
+                    status = self.get_training_status()
+                    
+                    return (
+                        plot,
+                        metrics.get('current_step', 0),
+                        metrics.get('current_loss', 0.0),
+                        metrics.get('min_loss', 0.0),
+                        status
+                    )
+                
+                manual_refresh_btn.click(
+                    fn=update_training_monitor,
+                    outputs=[loss_plot, current_step, current_loss, min_loss, training_status]
+                )
+                
+                # Auto-refresh with timer
+                timer = gr.Timer(5.0)
+                timer.tick(
+                    fn=update_training_monitor,
+                    outputs=[loss_plot, current_step, current_loss, min_loss, training_status]
                 )
             
             # Training controls
@@ -681,17 +778,70 @@ class AmharicTTSGradioApp:
                     max_tokens = gr.Slider(100, 2000, value=1000, step=50, label="Max Tokens")
                     inference_sample_rate = gr.Dropdown([16000, 22050, 24000], value=24000, label="Sample Rate")
                 
+                # Amharic Prosody Controls
+                with gr.Accordion("🎭 Amharic Prosody Controls", open=False):
+                    gemination_strength = gr.Slider(
+                        0.5, 2.0, value=1.0, step=0.1,
+                        label="Gemination Emphasis",
+                        info="Controls doubled consonant emphasis (ሁለት vs ሁሌት)"
+                    )
+                    
+                    ejective_strength = gr.Slider(
+                        0.5, 2.0, value=1.0, step=0.1,
+                        label="Ejective Consonant Strength",
+                        info="Controls glottalized consonants (ጥ, ቅ, ጭ)"
+                    )
+                    
+                    syllable_duration = gr.Slider(
+                        0.7, 1.3, value=1.0, step=0.05,
+                        label="Syllable Duration",
+                        info="Speaking speed (0.7=fast, 1.3=slow)"
+                    )
+                    
+                    stress_pattern = gr.Radio(
+                        ["penultimate", "final", "initial"],
+                        value="penultimate",
+                        label="Stress Pattern",
+                        info="Typical Amharic uses penultimate stress"
+                    )
+                    
+                    prosody_analysis = gr.JSON(
+                        label="Detected Amharic Features",
+                        value={}
+                    )
+                
                 generate_btn = gr.Button("🎙️ Generate Speech", variant="primary", size="lg")
                 audio_output = gr.Audio(label="Generated Audio")
                 generation_status = gr.Textbox(label="Generation Status", interactive=False)
                 
+                # Quality Metrics Display
+                with gr.Accordion("📊 Audio Quality Metrics", open=False):
+                    with gr.Row():
+                        rms_display = gr.Number(label="RMS Energy", interactive=False)
+                        peak_display = gr.Number(label="Peak Level", interactive=False)
+                        zcr_display = gr.Number(label="Zero Crossing Rate", interactive=False)
+                    
+                    with gr.Row():
+                        duration_display = gr.Number(label="Duration (s)", interactive=False)
+                        quality_score_display = gr.Slider(
+                            0, 10, label="Quality Score",
+                            interactive=False
+                        )
+                    
+                    quality_flags = gr.Textbox(label="Quality Checks", lines=2, interactive=False)
+                
                 generate_btn.click(
-                    fn=self.generate_speech,
+                    fn=self.generate_speech_with_metrics,
                     inputs=[
                         text_input, voice_id, emotion, speed, pitch,
-                        temperature, max_tokens, inference_sample_rate
+                        temperature, max_tokens, inference_sample_rate,
+                        gemination_strength, ejective_strength, syllable_duration, stress_pattern
                     ],
-                    outputs=[audio_output, generation_status]
+                    outputs=[
+                        audio_output, generation_status, prosody_analysis,
+                        rms_display, peak_display, zcr_display,
+                        duration_display, quality_score_display, quality_flags
+                    ]
                 )
             
             # Batch Inference
@@ -720,6 +870,85 @@ class AmharicTTSGradioApp:
                     inputs=[batch_texts, batch_voice_id, batch_emotion, batch_speed, batch_sample_rate],
                     outputs=[batch_output, None]
                 )
+        
+        return gr.Column()
+    
+    def create_comparison_tab(self):
+        """Create model comparison A/B testing tab"""
+        with gr.Column(elem_classes=["tab-content"]):
+            gr.Markdown("## 🔬 Compare Two Amharic TTS Models")
+            gr.Markdown("Load two models and compare their outputs side-by-side")
+            
+            with gr.Row():
+                with gr.Column():
+                    gr.Markdown("### 🅰️ Model A")
+                    model_a_path = gr.Textbox(
+                        label="Model A Checkpoint Path",
+                        placeholder="checkpoints/model_epoch_10.pt"
+                    )
+                    load_model_a_btn = gr.Button("📥 Load Model A", variant="secondary")
+                    model_a_status = gr.Textbox(label="Status", interactive=False)
+                
+                with gr.Column():
+                    gr.Markdown("### 🅱️ Model B")
+                    model_b_path = gr.Textbox(
+                        label="Model B Checkpoint Path",
+                        placeholder="checkpoints/model_epoch_20.pt"
+                    )
+                    load_model_b_btn = gr.Button("📥 Load Model B", variant="secondary")
+                    model_b_status = gr.Textbox(label="Status", interactive=False)
+            
+            # Comparison input
+            gr.Markdown("### 🎯 Test Generation")
+            comparison_text = gr.Textbox(
+                label="Test Text (Amharic)",
+                placeholder="ሰላም ዓለም! እንዴት ነሽ? ደህና ነኝ፣ አመሰግናለሁ።",
+                lines=3
+            )
+            
+            compare_btn = gr.Button(
+                "⚖️ Generate & Compare",
+                variant="primary",
+                size="lg"
+            )
+            
+            # Results
+            with gr.Row():
+                with gr.Column():
+                    gr.Markdown("#### 🔊 Model A Output")
+                    audio_a_output = gr.Audio(label="Audio A")
+                    metrics_a_display = gr.JSON(label="Metrics A")
+                
+                with gr.Column():
+                    gr.Markdown("#### 🔊 Model B Output")
+                    audio_b_output = gr.Audio(label="Audio B")
+                    metrics_b_display = gr.JSON(label="Metrics B")
+            
+            # Comparison results
+            gr.Markdown("### 📊 Comparison Results")
+            comparison_table = gr.Dataframe(
+                headers=["Metric", "Model A", "Model B", "Winner"],
+                label="Detailed Comparison",
+                interactive=False
+            )
+            
+            winner_display = gr.Textbox(
+                label="🏆 Overall Winner",
+                interactive=False
+            )
+            
+            # Wire up events
+            load_model_a_btn.click(
+                fn=lambda path: self.model_comparator.load_model_a(path, "Model A"),
+                inputs=[model_a_path],
+                outputs=[model_a_status]
+            )
+            
+            load_model_b_btn.click(
+                fn=lambda path: self.model_comparator.load_model_b(path, "Model B"),
+                inputs=[model_b_path],
+                outputs=[model_b_status]
+            )
         
         return gr.Column()
     
@@ -869,4 +1098,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main()
