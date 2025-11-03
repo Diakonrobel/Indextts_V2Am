@@ -114,12 +114,20 @@ class AmharicTTSGradioApp:
     
     def get_system_resources(self) -> Dict:
         """Get current system resource usage"""
+        gpu_util = 0
+        if torch.cuda.is_available():
+            try:
+                if hasattr(torch.cuda, 'utilization'):
+                    gpu_util = torch.cuda.utilization()
+            except (ModuleNotFoundError, RuntimeError):
+                gpu_util = 0
+        
         return {
             'cpu_percent': psutil.cpu_percent(),
             'memory_percent': psutil.virtual_memory().percent,
             'gpu_memory': torch.cuda.memory_allocated() / 1024**3 if torch.cuda.is_available() else 0,
             'gpu_memory_total': torch.cuda.get_device_properties(0).total_memory / 1024**3 if torch.cuda.is_available() else 0,
-            'gpu_utilization': torch.cuda.utilization() if hasattr(torch.cuda, 'utilization') else 0
+            'gpu_utilization': gpu_util
         }
     
     def update_system_resources(self):
