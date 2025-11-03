@@ -857,6 +857,11 @@ class AmharicTTSGradioApp:
                         file_count="multiple",
                         file_types=[".txt", ".json"]
                     )
+                    subtitle_files = gr.File(
+                        label="📄 Upload Subtitle Files (Optional)",
+                        file_count="multiple",
+                        file_types=[".srt", ".vtt"]
+                    )
                 
                 with gr.Row():
                     dataset_name = gr.Textbox(label="Dataset Name", placeholder="my_amharic_dataset")
@@ -894,9 +899,21 @@ class AmharicTTSGradioApp:
                         label="Select Dataset",
                         choices=self.get_available_datasets()
                     )
+                    processing_mode = gr.Dropdown(
+                        label="Processing Mode",
+                        choices=["traditional", "srt_vtt"],
+                        value="traditional"
+                    )
+                
+                with gr.Row():
                     min_duration = gr.Slider(0.5, 30.0, value=1.0, step=0.5, label="Min Duration (seconds)")
                     max_duration = gr.Slider(5.0, 300.0, value=30.0, step=5.0, label="Max Duration (seconds)")
                     sample_rate = gr.Dropdown([16000, 22050, 24000, 44100], value=24000, label="Sample Rate")
+                
+                with gr.Row():
+                    min_snr = gr.Slider(0, 40, value=20, step=1, label="Min SNR (dB)")
+                    enable_denoise = gr.Checkbox(label="Enable Denoising", value=True)
+                    enable_vad = gr.Checkbox(label="Enable VAD", value=True)
                 
                 prepare_btn = gr.Button("🔄 Prepare Dataset", variant="secondary")
                 prepare_status = gr.Textbox(label="Preparation Status", interactive=False)
