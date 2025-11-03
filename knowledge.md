@@ -169,6 +169,28 @@ This project implements fine-tuning capabilities for IndexTTS2, a text-to-speech
 ### Timeline to Production: 12-16 weeks
 **Key Insight:** 70% complete but fragmented. Focus on integration, not new features.
 
+## Model Download
+
+### Automatic Download (Recommended)
+Run the automatic downloader to get all required model files:
+```bash
+# Windows
+double-click download_models.bat
+
+# Or use Python directly
+python download_models.py
+```
+
+This downloads ~256 MB of files from Hugging Face:
+- `bpe.model` - Tokenizer (~5 MB)
+- `gpt.pth` - GPT model (~200 MB)
+- `config.yaml` - Configuration (~2 KB)
+- `s2mel.pth` - Mel converter (~50 MB)
+- `wav2vec2bert_stats.pt` - Stats (~1 MB)
+
+### Manual Download
+See `MODEL_DOWNLOAD_README.md` for direct download links.
+
 ## Usage Notes
 
 ### Current Status (All Critical Fixes Complete ✅)
