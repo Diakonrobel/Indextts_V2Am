@@ -475,12 +475,22 @@ class AmharicTTSGradioApp:
     def create_interface(self):
         """Create the complete Gradio interface"""
         
-        # Custom CSS for modern, professional design
+        # Enhanced Professional CSS
         css = """
         .main-container {
-            max-width: 1200px !important;
+            max-width: 1400px !important;
             margin: auto !important;
             padding: 20px !important;
+        }
+        
+        .main-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            color: white;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
         
         .gradio-container {
@@ -490,35 +500,35 @@ class AmharicTTSGradioApp:
         }
         
         .section-header {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 15px;
-            margin: 10px 0;
-            border-left: 4px solid #4CAF50;
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 5px;
         }
         
         .status-box {
             background: rgba(76, 175, 80, 0.1);
             border: 1px solid #4CAF50;
             border-radius: 5px;
-            padding: 10px;
-            margin: 5px 0;
+            padding: 1rem;
+            margin: 0.5rem 0;
         }
         
         .warning-box {
             background: rgba(255, 193, 7, 0.1);
             border: 1px solid #FFC107;
             border-radius: 5px;
-            padding: 10px;
-            margin: 5px 0;
+            padding: 1rem;
+            margin: 0.5rem 0;
         }
         
         .error-box {
             background: rgba(244, 67, 54, 0.1);
             border: 1px solid #F44336;
             border-radius: 5px;
-            padding: 10px;
-            margin: 5px 0;
+            padding: 1rem;
+            margin: 0.5rem 0;
         }
         
         .tab-content {
@@ -535,37 +545,48 @@ class AmharicTTSGradioApp:
             padding: 15px;
             margin: 10px 0;
         }
+        
+        .tab-nav button {
+            font-size: 16px !important;
+            padding: 12px 24px !important;
+        }
         """
         
         with gr.Blocks(css=css, title="Amharic IndexTTS2 - Professional TTS Platform", theme=gr.themes.Soft()) as app:
             
-            # Header
+            # Enhanced Header
             gr.HTML("""
-            <div class="section-header">
-                <h1>🎙️ Amharic IndexTTS2</h1>
-                <h3>Professional Text-to-Speech Training & Inference Platform</h3>
-                <p>Complete solution for Amharic TTS with advanced training optimizations</p>
+            <div class="main-header">
+                <h1 style="margin: 0; font-size: 2.5em;">🎙️ Amharic IndexTTS2</h1>
+                <h2 style="margin: 0.5em 0; font-size: 1.5em;">Professional Text-to-Speech Training & Inference Platform</h2>
+                <p style="margin: 0.5em 0;">Complete solution for Amharic TTS with advanced training optimizations</p>
+                <p style="margin: 0; opacity: 0.9; font-size: 0.9em;">
+                    <strong>Features:</strong> Live Training Monitor | Prosody Controls | Quality Metrics | A/B Testing | Batch Processing
+                </p>
             </div>
             """)
             
-            # Main tabs
-            with gr.Tabs():
-                with gr.TabItem("🚀 Training"):
+            # Main tabs with enhanced styling
+            with gr.Tabs(elem_classes=["tab-nav"]):
+                with gr.TabItem("🚀 Training", id=0):
                     self.create_training_tab()
-                with gr.TabItem("🎵 Inference"):
+                with gr.TabItem("🎵 Inference", id=1):
                     self.create_inference_tab()
-                with gr.TabItem("🔬 Comparison"):
+                with gr.TabItem("🔬 Model Comparison", id=2):
                     self.create_comparison_tab()
-                with gr.TabItem("📊 System"):
+                with gr.TabItem("📊 System Monitor", id=3):
                     self.create_system_tab()
-                with gr.TabItem("📁 Models"):
+                with gr.TabItem("📁 Model Management", id=4):
                     self.create_model_management_tab()
             
-            # Footer
+            # Enhanced Footer
             gr.HTML("""
-            <div style="text-align: center; margin-top: 30px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 10px;">
-                <p>Amharic IndexTTS2 Platform • Built with ❤️ for Ethiopian Language Technology</p>
-                <p>Advanced Training: SDPA • EMA • Mixed Precision • Gradient Checkpointing</p>
+            <div style="text-align: center; margin-top: 30px; padding: 20px; background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%); border-radius: 10px; border: 1px solid rgba(102,126,234,0.3);">
+                <p style="margin: 0.5em 0; font-size: 1.1em; font-weight: bold;">🇪🇹 Amharic IndexTTS2 Platform</p>
+                <p style="margin: 0.5em 0;">Built with ❤️ for Ethiopian Language Technology</p>
+                <p style="margin: 0.5em 0; font-size: 0.9em; color: #666;">
+                    <strong>Advanced Features:</strong> SDPA Optimization • EMA Smoothing • Mixed Precision • Gradient Checkpointing • Amharic Prosody
+                </p>
             </div>
             """)
         
@@ -815,7 +836,12 @@ class AmharicTTSGradioApp:
                         value={}
                     )
                 
-                generate_btn = gr.Button("🎙️ Generate Speech", variant="primary", size="lg")
+                generate_btn = gr.Button(
+                    "🎙️ Generate Speech",
+                    variant="primary",
+                    size="lg",
+                    elem_classes=["generate-btn"]
+                )
                 audio_output = gr.Audio(label="Generated Audio")
                 generation_status = gr.Textbox(label="Generation Status", interactive=False)
                 

@@ -67,12 +67,30 @@ This project implements fine-tuning capabilities for IndexTTS2, a text-to-speech
   - **System Monitor:** GPU/memory/process monitoring, system logs viewer
   - **Settings:** Model preferences, UI themes, cache management
   - Design inspired by XTTS v2 webui (D:\FINETUNE-XTTS-WEBUI-LIGHTNING\xtts-finetune-webui-fresh)
-- `amharic_gradio_app.py` - ✅ FULLY ENHANCED with:
-  - Live training monitoring with real-time loss plots
-  - Audio quality metrics display (RMS, peak, ZCR, quality score)
-  - Amharic prosody controls (gemination, ejectives, syllable duration, stress)
-  - Model comparison (A/B testing)
-  - Batch processing support
+- `amharic_gradio_app.py` - ✅ **PRIMARY AMHARIC WEBUI** - Professional platform with XTTS v2-inspired UI:
+  - **Enhanced Professional Design (NEW):**
+    - Gradient header with feature highlights
+    - Enhanced CSS with modern styling
+    - Tab navigation with emoji icons and IDs
+    - Professional button styling (primary, size=lg)
+    - Improved footer with gradient background
+  - **Required Models (NOT auto-downloadable yet):**
+    - `amharic_bpe.model` - Amharic vocabulary
+    - `checkpoints/bigvgan_v2_22khz_80band_256x/` - Vocoder
+    - Amharic fine-tuned checkpoints
+  - **Main Tabs (5 tabs):**
+    1. 🚀 Training - Dataset management, training config, live monitoring
+    2. 🎵 Inference - Single/batch generation with prosody controls
+    3. 🔬 Model Comparison - A/B testing interface
+    4. 📊 System Monitor - GPU/memory/checkpoints
+    5. 📁 Model Management - Export/validation
+  - **Core Features:**
+    - Live training monitoring with real-time loss plots
+    - Audio quality metrics (RMS, peak, ZCR, quality score)
+    - Amharic prosody controls (gemination, ejectives, syllable duration, stress)
+    - Model comparison (A/B testing)
+    - Batch processing support
+    - System resource monitoring
 - `launch_gradio.py` - Launch script
 - Utilities:
   - `indextts/utils/live_training_monitor.py` - Real-time visualization

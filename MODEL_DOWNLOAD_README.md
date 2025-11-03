@@ -1,6 +1,21 @@
 # IndexTTS2 Model Download Guide
 
-This guide helps you download the required pretrained model files for IndexTTS2.
+## ⚠️ Important Notice
+
+This script downloads the **base IndexTTS2 English/Chinese model** for `webui.py`.
+
+**For Amharic (`amharic_gradio_app.py`)**, you need different models:
+- `amharic_bpe.model` (Amharic vocabulary)
+- `checkpoints/bigvgan_v2_22khz_80band_256x/` (vocoder)
+- Amharic fine-tuned checkpoints
+
+These are NOT available for automatic download yet. You must train them yourself or obtain them separately.
+
+---
+
+## For Base IndexTTS2 (webui.py)
+
+This guide helps you download the required pretrained model files for the base IndexTTS2.
 
 ## Quick Start
 
