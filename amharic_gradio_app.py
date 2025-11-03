@@ -221,12 +221,12 @@ class AmharicTTSGradioApp:
                       mixed_precision, gradient_accumulation_steps):
         """Start model training"""
         if self.is_training:
-            return "❌ Training is already in progress", None
+            return "❌ Training is already in progress"
         
         try:
             # Validate inputs
             if not all([model_path, config_path, output_dir]):
-                return "❌ Please provide model path, config path, and output directory", None
+                return "❌ Please provide model path, config path, and output directory"
             
             # Prepare training command
             cmd = [
@@ -255,13 +255,13 @@ class AmharicTTSGradioApp:
             
             threading.Thread(target=self._run_training, args=(cmd,)).start()
             
-            return f"🚀 Training started!\n📊 Configuration:\n• Epochs: {num_epochs}\n• Batch Size: {batch_size}\n• Learning Rate: {learning_rate}\n• Optimizations: SDPA={enable_sdpa}, EMA={enable_ema}, Mixed Precision={mixed_precision}", None
+            return f"🚀 Training started!\n📊 Configuration:\n• Epochs: {num_epochs}\n• Batch Size: {batch_size}\n• Learning Rate: {learning_rate}\n• Optimizations: SDPA={enable_sdpa}, EMA={enable_ema}, Mixed Precision={mixed_precision}"
             
         except Exception as e:
             error_msg = f"❌ Error starting training: {str(e)}"
             self.logger.error(error_msg)
             self.is_training = False
-            return error_msg, None
+            return error_msg
     
     def _run_training(self, cmd):
         """Run training in background"""
@@ -713,7 +713,7 @@ class AmharicTTSGradioApp:
                     num_epochs, batch_size, learning_rate, enable_sdpa, 
                     enable_ema, mixed_precision, gradient_accumulation
                 ],
-                outputs=[training_status, None]
+                outputs=[training_status]
             )
             
             stop_training_btn.click(
