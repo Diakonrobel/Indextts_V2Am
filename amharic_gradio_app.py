@@ -739,17 +739,10 @@ class AmharicTTSGradioApp:
         
         with gr.Blocks(css=css, title="Amharic IndexTTS2 - Professional TTS Platform", theme=dark_theme) as app:
             
-            # Stunning Dark Theme Header
+            # Clean Minimal Header
             gr.HTML("""
             <div class="main-header">
                 <h1 style="margin: 0; font-size: 2.8em; font-weight: 700; text-shadow: 0 2px 20px rgba(102, 126, 234, 0.5);">🎙️ Amharic IndexTTS2</h1>
-                <h2 style="margin: 0.5em 0; font-size: 1.6em; font-weight: 500;">Professional Text-to-Speech Training & Inference Platform</h2>
-                <p style="margin: 0.8em 0; font-size: 1.05em; opacity: 0.95;">🇪🇹 Complete solution for Amharic TTS with advanced training optimizations</p>
-                <div style="margin-top: 1em; padding: 1em; background: rgba(0,0,0,0.2); border-radius: 8px; display: inline-block;">
-                    <p style="margin: 0; font-size: 0.95em; opacity: 0.95;">
-                        <strong>✨ Features:</strong> Live Training Monitor • Prosody Controls • Quality Metrics • A/B Testing • Batch Processing
-                    </p>
-                </div>
             </div>
             """)
             
@@ -766,16 +759,10 @@ class AmharicTTSGradioApp:
                 with gr.TabItem("📁 Model Management", id=4):
                     self.create_model_management_tab()
             
-            # Elegant Dark Theme Footer
+            # Clean Minimal Footer
             gr.HTML("""
-            <div style="text-align: center; margin-top: 40px; padding: 25px; background: linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.15) 100%); border-radius: 12px; border: 1px solid rgba(102,126,234,0.3); backdrop-filter: blur(10px);">
-                <p style="margin: 0.6em 0; font-size: 1.2em; font-weight: 700; color: #e8eaed;">🇪🇹 Amharic IndexTTS2 Platform</p>
-                <p style="margin: 0.5em 0; font-size: 1.05em; color: #b8bdc6;">Built with ❤️ for Ethiopian Language Technology</p>
-                <div style="margin-top: 1em; padding: 0.8em; background: rgba(0,0,0,0.3); border-radius: 8px; display: inline-block;">
-                    <p style="margin: 0; font-size: 0.9em; color: #9aa0a6;">
-                        <strong style="color: #667eea;">⚡ Advanced Features:</strong> SDPA Optimization • EMA Smoothing • Mixed Precision • Gradient Checkpointing • Amharic Prosody
-                    </p>
-                </div>
+            <div style="text-align: center; margin-top: 40px; padding: 15px; background: rgba(102,126,234,0.1); border-radius: 10px; border: 1px solid rgba(102,126,234,0.2);">
+                <p style="margin: 0; font-size: 0.9em; color: #9aa0a6;">🇪🇹 Amharic IndexTTS2</p>
             </div>
             """)
         
