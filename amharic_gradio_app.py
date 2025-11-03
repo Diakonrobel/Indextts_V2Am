@@ -450,10 +450,10 @@ class AmharicTTSGradioApp:
     def batch_generate(self, texts, voice_id, emotion, speed, sample_rate):
         """Generate speech for multiple texts"""
         if not self.current_model:
-            return None, "❌ Please load a model first"
+            return "❌ Please load a model first"
         
         if not texts:
-            return None, "❌ Please provide texts to synthesize"
+            return "❌ Please provide texts to synthesize"
         
         audio_paths = []
         for i, text in enumerate(texts.split('\n')):
@@ -462,7 +462,7 @@ class AmharicTTSGradioApp:
                 if audio_path:
                     audio_paths.append(f"Audio {i+1}: {audio_path}")
         
-        return '\n'.join(audio_paths), f"✅ Generated {len(audio_paths)} audio files"
+        return f"✅ Generated {len(audio_paths)} audio files\n" + '\n'.join(audio_paths)
     
     def create_interface(self):
         """Create the complete Gradio interface"""
@@ -868,7 +868,7 @@ class AmharicTTSGradioApp:
                 batch_generate_btn.click(
                     fn=self.batch_generate,
                     inputs=[batch_texts, batch_voice_id, batch_emotion, batch_speed, batch_sample_rate],
-                    outputs=[batch_output, None]
+                    outputs=[batch_output]
                 )
         
         return gr.Column()
