@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch, MagicMock
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from amharic_gradio_app import AmharicTTSGradio
+from amharic_gradio_app import AmharicTTSGradioApp
 
 
 class TestBatchGenerate:
@@ -14,7 +14,7 @@ class TestBatchGenerate:
     @pytest.fixture
     def tts_instance(self):
         """Create a TTS instance for testing"""
-        return AmharicTTSGradio()
+        return AmharicTTSGradioApp()
     
     def test_batch_generate_no_model_loaded(self, tts_instance):
         """Test that batch_generate returns a single error string when no model is loaded"""
