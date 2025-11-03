@@ -279,16 +279,45 @@ class AmharicTTSGradioApp:
             self.logger.error(error_msg)
             return error_msg
     
-    def _run_dataset_preparation(self, cmd):
-        """Run dataset preparation in background"""
+    def process_web_urls(self, urls_text, dataset_name, max_workers, extract_subtitles, 
+                        min_snr, enable_denoise):
+        """Process media from web URLs with comprehensive pipeline"""
+        if not urls_text or not dataset_name:
+            return "❌ Please provide URLs and dataset name"
+        
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True)
-            if result.returncode == 0:
-                self.logger.info("✅ Dataset preparation completed")
-            else:
-                self.logger.error(f"Dataset preparation failed: {result.stderr}")
+            # Parse URLs
+            urls = [line.strip() for line in urls_text.split('\n') if line.strip() and not line.startswith('#')]
+            
+            if not urls:
+                return "❌ No valid URLs found"
+            
+            # Update processor config
+            self.dataset_processor.quality_validator.min_snr_db = min_snr
+            self.dataset_processor.audio_slicer.denoise = enable_denoise
+            
+            def process_in_background():
+                try:
+                    samples, stats = self.dataset_processor.process_from_urls(
+                        urls=urls,
+                        dataset_name=dataset_name,
+                        max_workers=max_workers,
+                        extract_subtitles=extract_subtitles
+                    )
+                    
+                    self.logger.info(
+                        f"✅ Web processing complete: {stats.processed}/{stats.total_inputs} samples, "
+                        f"{stats.total_duration:.1f}s total, quality {stats.avg_quality_score:.1f}/10"
+                    )
+                except Exception as e:
+                    self.logger.error(f"Web URL processing failed: {e}")
+            
+            threading.Thread(target=process_in_background).start()
+            
+            return f"🔄 Processing {len(urls)} URLs...\n⏳ This may take 10-30 minutes depending on content length.\n📥 Downloading media and extracting subtitles..."
+            
         except Exception as e:
-            self.logger.error(f"Error in dataset preparation: {e}")
+            return f"❌ Error: {str(e)}"
     
     def start_training(self, model_path, config_path, output_dir, checkpoint_path, 
                       num_epochs, batch_size, learning_rate, enable_sdpa, enable_ema,

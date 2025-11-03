@@ -161,9 +161,20 @@ This project implements fine-tuning capabilities for IndexTTS2, a text-to-speech
 - noisereduce>=2.0.1 (Audio denoising)
 - rich>=13.0.0 (Progress display)
 
-**Installation:** `pip install pysrt webvtt-py yt-dlp noisereduce rich`
+**Installation:**
+```bash
+# Quick install (all at once)
+pip install pysrt webvtt-py yt-dlp noisereduce rich
+
+# Or use provided script (Windows)
+install_dataset_dependencies.bat
+```
 
 **Also requires FFmpeg:** Download from ffmpeg.org or install via package manager
+
+**Troubleshooting:**
+- If "yt-dlp not found" error: Install manually `pip install yt-dlp`
+- If "FFmpeg not found": Download from https://ffmpeg.org and add to PATH
 
 #### Usage:
 ```python
